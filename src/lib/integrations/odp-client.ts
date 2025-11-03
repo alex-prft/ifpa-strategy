@@ -80,16 +80,17 @@ export class ODPClient {
    */
   async getRealTimeAudiences(): Promise<any[]> {
     try {
-      const response = await fetch(`${this.config.base_url}/v3/audiences`, {
+      const params = new URLSearchParams({
+        type: 'real_time',
+        project_id: this.config.project_id
+      });
+
+      const response = await fetch(`${this.config.base_url}/v3/audiences?${params}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${this.config.api_key}`,
           'Content-Type': 'application/json'
-        },
-        params: new URLSearchParams({
-          type: 'real_time',
-          project_id: this.config.project_id
-        })
+        }
       });
 
       if (!response.ok) {
