@@ -1,0 +1,236 @@
+{
+  "agent_id": "personalization_maturity_generator",
+  "name": "Personalization Maturity Generator Workflow",
+  "description": "End-to-end workflow that generates comprehensive personalization strategies from user input to CMP publication with stakeholder notification",
+  "version": "1.0.0",
+  "type": "workflow",
+  "trigger": "message",
+  "instructions": [
+    "kpi-experimentation-definitions.md",
+    "data-governance-id-strategy.md",
+    "personalization-maturity-rubric.md",
+    "brand-tone-guidelines.md"
+  ],
+  "workflow_steps": [
+    {
+      "step": 1,
+      "name": "input_processing",
+      "description": "Process user input and extract workflow parameters",
+      "type": "internal",
+      "required_inputs": ["kpi_target", "channel", "region", "timing", "recipients"],
+      "outputs": ["processed_inputs", "workflow_context"]
+    },
+    {
+      "step": 2,
+      "name": "audience_suggestion",
+      "description": "Generate targetable audience recommendations",
+      "type": "agent_call",
+      "agent_id": "audience_suggester",
+      "inputs_from": "processed_inputs",
+      "outputs": ["audience_portfolio", "audience_methodology"]
+    },
+    {
+      "step": 3,
+      "name": "idea_generation",
+      "description": "Generate personalization ideas for each audience",
+      "type": "agent_call_loop",
+      "agent_id": "personalization_idea_generator",
+      "loop_over": "audience_portfolio",
+      "inputs_from": ["processed_inputs", "audience_portfolio"],
+      "outputs": ["personalization_ideas", "content_strategy"]
+    },
+    {
+      "step": 4,
+      "name": "experiment_blueprinting",
+      "description": "Create experiment specifications for top ideas",
+      "type": "agent_call_loop",
+      "agent_id": "experiment_blueprinter",
+      "loop_over": "top_personalization_ideas",
+      "selection_criteria": "highest_impact_ideas",
+      "max_blueprints": 5,
+      "inputs_from": ["personalization_ideas", "audience_portfolio"],
+      "outputs": ["experiment_blueprints", "implementation_plans"]
+    },
+    {
+      "step": 5,
+      "name": "maturity_assessment",
+      "description": "Assess current personalization maturity and create roadmap",
+      "type": "internal",
+      "inputs_from": ["workflow_context", "audience_portfolio", "personalization_ideas"],
+      "outputs": ["maturity_score", "maturity_analysis", "roadmap_30_60_90"]
+    },
+    {
+      "step": 6,
+      "name": "plan_composition",
+      "description": "Compose comprehensive personalization plan document",
+      "type": "internal",
+      "inputs_from": ["all_previous_outputs"],
+      "outputs": ["complete_plan_markdown", "executive_summary"]
+    },
+    {
+      "step": 7,
+      "name": "cmp_publication",
+      "description": "Publish plan to Campaign Management Platform",
+      "type": "agent_call",
+      "agent_id": "cmp_publisher",
+      "inputs_from": ["complete_plan_markdown", "workflow_context"],
+      "outputs": ["cmp_campaign_url", "publication_status"]
+    },
+    {
+      "step": 8,
+      "name": "stakeholder_notification",
+      "description": "Send email notification to stakeholders",
+      "type": "agent_call",
+      "agent_id": "email_notifier",
+      "inputs_from": ["cmp_campaign_url", "executive_summary", "workflow_context"],
+      "outputs": ["notification_status", "workflow_completion"]
+    }
+  ],
+  "input_schema": {
+    "type": "object",
+    "required": ["kpi_target", "channel"],
+    "properties": {
+      "kpi_target": {
+        "type": "string",
+        "description": "Target KPI for optimization (e.g., 'Improve CVR 10%')",
+        "examples": ["Improve CVR 15%", "Increase RPV by $25", "Boost CTR 20%"]
+      },
+      "channel": {
+        "type": "array",
+        "items": { "enum": ["Web", "App", "Email"] },
+        "description": "Primary channels for personalization"
+      },
+      "region": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "Geographic regions or markets to focus on",
+        "examples": ["North America", "EMEA", "APAC"]
+      },
+      "timing": {
+        "type": "string",
+        "description": "Timeline or quarter for implementation",
+        "examples": ["Q1 2024", "Next 3 months", "Immediate"]
+      },
+      "recipients": {
+        "type": "array",
+        "items": { "type": "string", "format": "email" },
+        "description": "Email addresses for stakeholder notifications"
+      }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "workflow_status": { "enum": ["completed", "failed", "partial"] },
+      "maturity_assessment": {
+        "type": "object",
+        "properties": {
+          "overall_score": { "type": "number", "minimum": 1, "maximum": 5 },
+          "category_scores": { "type": "object" },
+          "maturity_level": { "type": "string" },
+          "key_recommendations": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "audience_portfolio": {
+        "type": "array",
+        "description": "Top 3-5 recommended audiences"
+      },
+      "personalization_strategy": {
+        "type": "object",
+        "properties": {
+          "total_ideas": { "type": "integer" },
+          "priority_ideas": { "type": "array" },
+          "content_requirements": { "type": "array" }
+        }
+      },
+      "experiment_roadmap": {
+        "type": "array",
+        "description": "Top experiment blueprints ready for implementation"
+      },
+      "implementation_timeline": {
+        "type": "object",
+        "properties": {
+          "30_days": { "type": "array", "items": { "type": "string" } },
+          "60_days": { "type": "array", "items": { "type": "string" } },
+          "90_days": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "deliverables": {
+        "type": "object",
+        "properties": {
+          "cmp_campaign_url": { "type": "string", "format": "uri" },
+          "plan_document_id": { "type": "string" },
+          "notification_sent": { "type": "boolean" }
+        }
+      }
+    }
+  },
+  "error_handling": {
+    "retry_policies": {
+      "api_failures": {
+        "max_retries": 3,
+        "backoff_strategy": "exponential",
+        "retry_delay": "2s"
+      },
+      "tool_unavailable": {
+        "fallback_mode": "continue_with_warnings",
+        "document_limitations": true
+      }
+    },
+    "failure_modes": {
+      "audience_generation_failure": "Continue with generic audiences and document limitation",
+      "content_api_failure": "Continue without content recommendations context",
+      "cmp_publication_failure": "Generate downloadable plan document as fallback",
+      "notification_failure": "Log error and provide manual notification instructions"
+    }
+  },
+  "performance_targets": {
+    "total_execution_time": "180 seconds",
+    "step_timeouts": {
+      "audience_suggestion": "30 seconds",
+      "idea_generation": "60 seconds",
+      "experiment_blueprinting": "45 seconds",
+      "plan_composition": "30 seconds",
+      "cmp_publication": "15 seconds"
+    }
+  },
+  "quality_gates": {
+    "minimum_audiences": 3,
+    "minimum_ideas_per_audience": 3,
+    "minimum_experiment_blueprints": 2,
+    "plan_completeness_check": [
+      "executive_summary",
+      "maturity_assessment",
+      "audience_portfolio",
+      "personalization_ideas",
+      "experiment_blueprints",
+      "30_60_90_roadmap",
+      "success_metrics",
+      "risk_assessment"
+    ]
+  },
+  "prompt_template": "You are orchestrating a comprehensive personalization strategy generation workflow. Process the user's request and coordinate all specialized agents to deliver a complete personalization plan.\n\n## User Request Analysis:\n{{user_input}}\n\n## Workflow Execution:\n\n1. **Extract Parameters**: Parse KPI target, channels, regions, timing, and recipients\n2. **Generate Audiences**: Use audience_suggester to create 3-5 targetable segments\n3. **Develop Ideas**: Use personalization_idea_generator for each audience (4-6 ideas each)\n4. **Create Blueprints**: Use experiment_blueprinter for top 5 highest-impact ideas\n5. **Assess Maturity**: Evaluate current state using personalization maturity rubric\n6. **Compose Plan**: Create comprehensive markdown document with all components\n7. **Publish to CMP**: Use cmp_publisher to create shareable campaign\n8. **Notify Stakeholders**: Use email_notifier to send review notifications\n\n## Plan Structure Requirements:\n\n```markdown\n# Personalization Strategy Plan\n\n## Executive Summary\n- Maturity assessment and score\n- Key recommendations\n- Expected business impact\n\n## Current State Analysis\n- Personalization maturity breakdown\n- Capability gaps identified\n- Baseline performance metrics\n\n## Audience Portfolio\n- 3-5 prioritized audience segments\n- Targeting logic and rationale\n- Coverage estimates and opportunities\n\n## Personalization Strategy\n- Ideas by audience segment\n- Content and messaging strategy\n- Implementation priorities\n\n## Experiment Roadmap\n- Ready-to-implement experiment specs\n- Statistical requirements and timelines\n- Success criteria and guardrails\n\n## 30/60/90-Day Implementation Plan\n- Phased rollout strategy\n- Resource requirements\n- Milestone definitions\n\n## Analytics & Measurement\n- KPI tracking framework\n- Attribution methodology\n- Reporting requirements\n\n## Risk Assessment\n- Technical implementation risks\n- Business and user experience risks\n- Mitigation strategies\n\n## Success Metrics\n- Primary KPIs and targets\n- Success criteria by phase\n- Long-term optimization goals\n```\n\n## Workflow Success Criteria:\n- Complete plan delivered in <3 minutes\n- All specialized agents execute successfully\n- Plan published to CMP with shareable URL\n- Stakeholders notified via email\n- No PII exposure throughout process\n- All governance requirements met",
+  "integration_requirements": {
+    "required_tools": [
+      "com.acme.opal.audience",
+      "com.acme.opal.content",
+      "com.acme.opal.experiments",
+      "com.acme.cmp",
+      "com.acme.notify"
+    ],
+    "required_agents": [
+      "audience_suggester",
+      "personalization_idea_generator",
+      "experiment_blueprinter",
+      "cmp_publisher",
+      "email_notifier"
+    ],
+    "data_dependencies": [
+      "ODP audience data",
+      "Content recommendations catalog",
+      "Historical experiment data",
+      "CMP workspace access",
+      "Email notification permissions"
+    ]
+  }
+}

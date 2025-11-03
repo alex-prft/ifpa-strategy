@@ -1,0 +1,195 @@
+{
+  "agent_id": "experiment_blueprinter",
+  "name": "Experiment Blueprinter Agent",
+  "description": "Turn personalization ideas into production-ready experiment specifications for Web or Feature Experimentation",
+  "version": "1.0.0",
+  "type": "specialized",
+  "single_shot": true,
+  "instructions": [
+    "kpi-experimentation-definitions.md",
+    "data-governance-id-strategy.md"
+  ],
+  "tools": [
+    {
+      "tool_id": "com.acme.opal.experiments",
+      "endpoint": "experiment-catalog",
+      "usage": "Learn from previous experiments to avoid duplication and incorporate learnings"
+    }
+  ],
+  "input_variables": {
+    "IDEA_SUMMARY": {
+      "type": "string",
+      "required": true,
+      "description": "Summary of the personalization idea to implement"
+    },
+    "IDEA_DETAILS": {
+      "type": "object",
+      "required": true,
+      "description": "Complete idea details from personalization_idea_generator"
+    },
+    "PRIMARY_KPI": {
+      "type": "string",
+      "required": true,
+      "description": "Primary KPI to optimize"
+    },
+    "AUDIENCE": {
+      "type": "string",
+      "required": true,
+      "description": "Target audience definition"
+    },
+    "CHANNEL": {
+      "type": "string",
+      "required": true,
+      "description": "Implementation channel (Web/App)"
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "required": ["experiment_spec", "implementation_plan", "risks_mitigation"],
+    "properties": {
+      "experiment_spec": {
+        "type": "object",
+        "required": ["name", "hypothesis", "platform", "targeting", "variants", "metrics"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Clear, descriptive experiment name"
+          },
+          "hypothesis": {
+            "type": "string",
+            "description": "Testable hypothesis statement with expected outcome"
+          },
+          "platform": {
+            "type": "string",
+            "enum": ["web", "feature"],
+            "description": "Experimentation platform to use"
+          },
+          "targeting": {
+            "type": "object",
+            "required": ["audience", "conditions"],
+            "properties": {
+              "audience": { "type": "string", "description": "Target audience definition" },
+              "odp_rt_audience": { "type": "string", "description": "ODP Real-Time Audience ID if available" },
+              "conditions": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "Targeting conditions and constraints"
+              }
+            }
+          },
+          "variants": {
+            "type": "array",
+            "minItems": 2,
+            "items": {
+              "type": "object",
+              "required": ["name", "description", "traffic_allocation"],
+              "properties": {
+                "name": { "type": "string" },
+                "description": { "type": "string" },
+                "traffic_allocation": { "type": "number", "minimum": 0, "maximum": 100 }
+              }
+            }
+          },
+          "metrics": {
+            "type": "object",
+            "required": ["primary", "secondary", "guardrails"],
+            "properties": {
+              "primary": { "type": "string", "description": "Primary success metric" },
+              "secondary": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "Secondary metrics to monitor"
+              },
+              "guardrails": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "Guardrail metrics to prevent negative impact"
+              }
+            }
+          },
+          "mde": {
+            "type": "number",
+            "description": "Minimum detectable effect (percentage)"
+          },
+          "sample_size": {
+            "type": "integer",
+            "description": "Required sample size per variant"
+          },
+          "duration_estimate": {
+            "type": "string",
+            "description": "Estimated experiment duration"
+          }
+        }
+      },
+      "implementation_plan": {
+        "type": "object",
+        "required": ["rollout_criteria", "kill_criteria", "implementation_checklist"],
+        "properties": {
+          "rollout_criteria": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Conditions for full rollout"
+          },
+          "kill_criteria": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Conditions for immediate experiment termination"
+          },
+          "implementation_checklist": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Technical implementation tasks"
+          },
+          "qa_requirements": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Quality assurance and testing requirements"
+          }
+        }
+      },
+      "risks_mitigation": {
+        "type": "object",
+        "required": ["technical_risks", "business_risks", "mitigation_strategies"],
+        "properties": {
+          "technical_risks": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Technical implementation risks"
+          },
+          "business_risks": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Business and user experience risks"
+          },
+          "mitigation_strategies": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Risk mitigation approaches"
+          }
+        }
+      }
+    }
+  },
+  "prompt_template": "You are an expert experimentation strategist responsible for creating production-ready experiment specifications. Transform the personalization idea into a comprehensive experiment blueprint.\n\n## Input Context:\n- **Idea**: {{IDEA_SUMMARY}}\n- **Primary KPI**: {{PRIMARY_KPI}}\n- **Audience**: {{AUDIENCE}}\n- **Channel**: {{CHANNEL}}\n\n## Blueprint Requirements:\n\n1. **Statistical Rigor**: Follow MDE and sample size standards from KPI definitions\n2. **Platform Selection**: Choose between Web Experimentation and Feature Experimentation based on implementation needs\n3. **Targeting Integration**: Use ODP Real-Time Audiences when available\n4. **Risk Management**: Include comprehensive guardrails and kill criteria\n5. **Implementation Readiness**: Provide actionable technical requirements\n\n## Experiment Design Process:\n\n1. **Hypothesis Formation**: Create testable, specific hypothesis\n2. **Platform Decision**: Web for UI changes, Feature for functionality changes\n3. **Audience Targeting**: Leverage ODP RT Audiences for consistency\n4. **Variant Design**: Control vs. Treatment with clear differentiation\n5. **Metrics Selection**: Primary KPI + secondary metrics + guardrails\n6. **Statistical Planning**: Calculate MDE and sample size requirements\n7. **Risk Assessment**: Identify and plan for potential issues\n\n## Key Considerations:\n\n- **Historical Learning**: Use Experiments Tool to avoid repeating failed tests\n- **ID Resolution**: Ensure targeting uses proper ID priority hierarchy\n- **Cross-Platform Consistency**: Maintain experience coherence\n- **Privacy Compliance**: No PII in targeting or tracking\n- **Performance Impact**: Consider page load and user experience effects\n\n## Output Quality Standards:\n\n- Hypothesis must be specific and measurable\n- Targeting must use ODP RT Audiences when possible\n- Sample size calculations must follow statistical standards\n- Implementation checklist must be comprehensive and actionable\n- Risk mitigation must address both technical and business concerns\n\nCreate an experiment specification that development teams can immediately implement with confidence in statistical validity and business safety.",
+  "success_criteria": [
+    "Complete experiment specification ready for implementation",
+    "Statistically valid sample size and MDE calculations",
+    "Proper platform selection (Web vs Feature) with justification",
+    "Comprehensive risk assessment with mitigation strategies",
+    "Clear targeting using ODP Real-Time Audiences when available",
+    "Actionable implementation checklist with technical requirements",
+    "Appropriate guardrail metrics to prevent negative business impact"
+  ],
+  "governance_checks": [
+    "ID resolution follows priority hierarchy in targeting",
+    "No PII used in experiment targeting or tracking",
+    "Statistical methodology follows KPI standards",
+    "Risk assessment includes business impact considerations"
+  ],
+  "integration_notes": {
+    "upstream_dependencies": ["personalization_idea_generator output", "audience_suggester output"],
+    "downstream_consumers": ["CMP publication", "Development teams"],
+    "platform_requirements": ["Optimizely Web Experimentation", "Optimizely Feature Experimentation", "ODP Real-Time Audiences"],
+    "data_dependencies": ["Historical experiment data", "Baseline performance metrics"]
+  }
+}

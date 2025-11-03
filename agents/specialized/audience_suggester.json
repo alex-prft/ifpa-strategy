@@ -1,0 +1,136 @@
+{
+  "agent_id": "audience_suggester",
+  "name": "Audience Suggester Agent",
+  "description": "Propose 3-5 targetable audiences for personalization using ODP + Salesforce traits with ID priority enforcement",
+  "version": "1.0.0",
+  "type": "specialized",
+  "single_shot": true,
+  "instructions": [
+    "kpi-experimentation-definitions.md",
+    "data-governance-id-strategy.md",
+    "personalization-maturity-rubric.md",
+    "brand-tone-guidelines.md"
+  ],
+  "tools": [
+    {
+      "tool_id": "com.acme.opal.audience",
+      "endpoint": "audience-lookup",
+      "usage": "May call for examples and grounding in real segments/attributes"
+    }
+  ],
+  "input_variables": {
+    "KPI_TARGET": {
+      "type": "string",
+      "required": true,
+      "description": "Target KPI (e.g., CVR, RPV, CTR)",
+      "examples": ["CVR", "RPV", "CTR", "AOV", "Engagement"]
+    },
+    "CHANNEL": {
+      "type": "string",
+      "required": true,
+      "description": "Primary channel for personalization",
+      "enum": ["Web", "App", "Email"],
+      "default": "Web"
+    },
+    "REGION": {
+      "type": "string",
+      "required": false,
+      "description": "Geographic region for targeting",
+      "examples": ["North America", "EMEA", "APAC", "Global"]
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "required": ["audiences", "methodology", "risks"],
+    "properties": {
+      "audiences": {
+        "type": "array",
+        "minItems": 3,
+        "maxItems": 5,
+        "items": {
+          "type": "object",
+          "required": ["name", "logic", "rationale", "estimated_coverage"],
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "Clear, descriptive audience name"
+            },
+            "logic": {
+              "type": "string",
+              "description": "Boolean logic for audience definition using allowlisted attributes"
+            },
+            "rationale": {
+              "type": "string",
+              "description": "Why this audience is relevant for the KPI target"
+            },
+            "estimated_coverage": {
+              "type": "string",
+              "description": "Estimated audience size or percentage (e.g., '15-20% of traffic')"
+            },
+            "key_attributes": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Primary attributes defining this audience"
+            },
+            "personalization_opportunities": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Specific personalization tactics for this audience"
+            }
+          }
+        }
+      },
+      "methodology": {
+        "type": "string",
+        "description": "Explanation of audience selection methodology and data sources used"
+      },
+      "risks": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "Potential risks or limitations of the proposed audiences"
+      }
+    }
+  },
+  "prompt_template": "You are an expert audience strategist specializing in data-driven personalization. Your task is to propose 3-5 targetable audiences for {{KPI_TARGET}} optimization on {{CHANNEL}}{{#REGION}} in {{REGION}}{{/REGION}}.\n\n## Key Requirements:\n\n1. **ID Priority Compliance**: Follow the mandatory hierarchy: email_hash → sf_contact_id → opti_user_id → zaius_id\n2. **Attribute Restrictions**: Only use allowlisted attributes from ODP/Salesforce sync\n3. **Audience Quality**: Each audience must be:\n   - Clearly defined with boolean logic\n   - Relevant to the target KPI\n   - Sufficiently sized for statistical significance\n   - Actionable for personalization\n\n## Audience Development Process:\n\n1. **Analyze KPI Context**: Consider what drives {{KPI_TARGET}} performance\n2. **Leverage Available Data**: Use ODP segments and Salesforce attributes strategically\n3. **Balance Size vs. Precision**: Ensure audiences are large enough for testing but specific enough for personalization\n4. **Consider Channel Constraints**: Optimize for {{CHANNEL}} capabilities and user behavior\n\n## Output Requirements:\n\nFor each proposed audience:\n- **Name**: Descriptive and business-friendly\n- **Logic**: Clear boolean expression using allowlisted attributes\n- **Rationale**: Connection to KPI improvement hypothesis\n- **Coverage**: Realistic size estimation\n- **Attributes**: Key defining characteristics\n- **Opportunities**: Specific personalization tactics\n\n## Governance Notes:\n- Never reference plaintext emails or PII\n- Only suggest attributes from the approved allowlist\n- Include privacy and consent considerations\n- Document data source and freshness assumptions\n\nProvide audiences that balance statistical power with personalization precision, ensuring each has clear business value and implementation feasibility.",
+  "success_criteria": [
+    "3-5 well-defined audiences with clear business rationale",
+    "All audience logic uses only allowlisted attributes",
+    "ID priority order is properly referenced and followed",
+    "Each audience has realistic coverage estimates",
+    "Personalization opportunities are specific and actionable",
+    "Risks and limitations are honestly assessed",
+    "Output is ready for immediate use by personalization_idea_generator"
+  ],
+  "governance_checks": [
+    "No PII exposure in audience definitions",
+    "Only allowlisted attributes used in logic",
+    "ID resolution follows priority hierarchy",
+    "Privacy considerations documented",
+    "Data governance compliance verified"
+  ],
+  "integration_notes": {
+    "upstream_dependencies": ["User workflow input"],
+    "downstream_consumers": ["personalization_idea_generator"],
+    "data_sources": ["ODP", "Salesforce (via ODP sync)"],
+    "real_time_requirements": "Audience definitions must be compatible with ODP Real-Time Audiences"
+  },
+  "example_input": {
+    "KPI_TARGET": "CVR",
+    "CHANNEL": "Web",
+    "REGION": "North America"
+  },
+  "example_output": {
+    "audiences": [
+      {
+        "name": "High-Intent Enterprise Prospects",
+        "logic": "(customer_tier = 'Enterprise' OR customer_segment = 'Enterprise') AND lifecycle_stage IN ('Lead', 'Prospect') AND engagement_score > 70",
+        "rationale": "Enterprise prospects with high engagement are more likely to convert due to budget authority and demonstrated interest",
+        "estimated_coverage": "8-12% of traffic",
+        "key_attributes": ["customer_segment", "lifecycle_stage", "engagement_score"],
+        "personalization_opportunities": ["Enterprise-focused case studies", "ROI calculators", "Priority support messaging", "Executive-level content"]
+      }
+    ],
+    "methodology": "Audiences selected based on correlation analysis between customer attributes and conversion patterns, prioritized by statistical significance and personalization feasibility",
+    "risks": ["Audience sizes may fluctuate with seasonal business patterns", "Enterprise segment definition may need validation with sales team", "Engagement score calculation methodology should be verified"]
+  }
+}

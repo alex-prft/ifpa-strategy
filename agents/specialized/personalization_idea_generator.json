@@ -1,0 +1,151 @@
+{
+  "agent_id": "personalization_idea_generator",
+  "name": "Personalization Idea Generator Agent",
+  "description": "Produce 4-6 on-site personalization ideas per audience aligned with Content Recommendations topics/sections",
+  "version": "1.0.0",
+  "type": "specialized",
+  "single_shot": true,
+  "instructions": [
+    "kpi-experimentation-definitions.md",
+    "data-governance-id-strategy.md",
+    "brand-tone-guidelines.md"
+  ],
+  "tools": [
+    {
+      "tool_id": "com.acme.opal.content",
+      "endpoint": "content-lookup",
+      "usage": "Get content recommendations context for personalization ideas"
+    }
+  ],
+  "input_variables": {
+    "AUDIENCE_NAME": {
+      "type": "string",
+      "required": true,
+      "description": "Name of the target audience from audience_suggester output"
+    },
+    "AUDIENCE_LOGIC": {
+      "type": "string",
+      "required": true,
+      "description": "Boolean logic defining the audience"
+    },
+    "AUDIENCE_ATTRIBUTES": {
+      "type": "array",
+      "items": { "type": "string" },
+      "required": true,
+      "description": "Key attributes that define this audience"
+    },
+    "KPI_TARGET": {
+      "type": "string",
+      "required": true,
+      "description": "Primary KPI to optimize for"
+    },
+    "CHANNEL": {
+      "type": "string",
+      "required": true,
+      "description": "Primary channel for personalization"
+    },
+    "TOPIC": {
+      "type": "string",
+      "required": false,
+      "description": "Optional content topic focus"
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "required": ["ideas", "content_strategy", "implementation_notes"],
+    "properties": {
+      "ideas": {
+        "type": "array",
+        "minItems": 4,
+        "maxItems": 6,
+        "items": {
+          "type": "object",
+          "required": ["name", "placement", "message_offer", "fallback", "measurement"],
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "Descriptive name for the personalization idea"
+            },
+            "placement": {
+              "type": "string",
+              "description": "Where on the site/app this personalization appears"
+            },
+            "message_offer": {
+              "type": "string",
+              "description": "The personalized message, content, or offer"
+            },
+            "recs_topic": {
+              "type": "string",
+              "description": "Content Recommendations topic if applicable"
+            },
+            "recs_section": {
+              "type": "string",
+              "description": "Content Recommendations section if applicable"
+            },
+            "fallback": {
+              "type": "string",
+              "description": "Default experience for non-matching users"
+            },
+            "measurement": {
+              "type": "object",
+              "required": ["primary", "secondary"],
+              "properties": {
+                "primary": { "type": "string", "description": "Primary KPI measurement" },
+                "secondary": {
+                  "type": "array",
+                  "items": { "type": "string" },
+                  "description": "Secondary metrics to track"
+                }
+              }
+            },
+            "instrumentation": {
+              "type": "string",
+              "enum": ["web_rule", "feature_flag"],
+              "description": "Implementation method"
+            },
+            "dependencies": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Technical or content dependencies"
+            },
+            "estimated_impact": {
+              "type": "string",
+              "description": "Expected impact on target KPI"
+            }
+          }
+        }
+      },
+      "content_strategy": {
+        "type": "string",
+        "description": "Overall content personalization strategy for this audience"
+      },
+      "implementation_notes": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "Important implementation considerations"
+      }
+    }
+  },
+  "prompt_template": "You are an expert personalization strategist focused on creating compelling, data-driven on-site experiences. Generate 4-6 personalization ideas for the {{AUDIENCE_NAME}} audience to optimize {{KPI_TARGET}} on {{CHANNEL}}.\n\n## Audience Context:\n- **Definition**: {{AUDIENCE_LOGIC}}\n- **Key Attributes**: {{AUDIENCE_ATTRIBUTES}}\n- **Channel**: {{CHANNEL}}\n{{#TOPIC}}- **Content Focus**: {{TOPIC}}{{/TOPIC}}\n\n## Personalization Principles:\n\n1. **Relevance**: Match content and messaging to audience characteristics\n2. **Value**: Provide clear, immediate value aligned with user intent\n3. **Progression**: Support natural user journey advancement\n4. **Authenticity**: Maintain brand voice while personalizing\n5. **Measurability**: Ensure clear KPI impact tracking\n\n## Idea Development Process:\n\n1. **Analyze Audience Needs**: What does this audience value most?\n2. **Leverage Content Assets**: Use Content Recommendations context\n3. **Optimize Placements**: Choose high-impact, visible locations\n4. **Craft Messaging**: Align with brand tone guidelines\n5. **Plan Measurement**: Define success metrics and tracking\n\n## Implementation Requirements:\n\n- **Instrumentation**: Choose between Web Personalization rules or Feature flags\n- **Fallbacks**: Always provide default experience for non-matching users\n- **Dependencies**: Identify content, technical, or integration requirements\n- **Privacy**: Ensure no PII exposure in personalized content\n\n## Content Integration:\n\nUse the Content Tool to:\n- Find relevant content recommendations\n- Align with existing content topics/sections\n- Ensure content availability and quality\n- Leverage high-performing content assets\n\nGenerate ideas that are:\n- Immediately actionable with available content\n- Technically feasible with current platform capabilities\n- Aligned with brand voice and user experience standards\n- Designed for clear KPI impact measurement\n- Scalable across similar audience segments",
+  "success_criteria": [
+    "4-6 specific, actionable personalization ideas",
+    "Clear alignment between audience characteristics and proposed experiences",
+    "All ideas include specific placement, messaging, and measurement plans",
+    "Content Recommendations integration where applicable",
+    "Proper instrumentation method specified (Web rule vs Feature flag)",
+    "Realistic fallback experiences defined",
+    "Dependencies and technical requirements clearly documented"
+  ],
+  "governance_checks": [
+    "No PII used in personalized messaging",
+    "Brand tone guidelines followed in all copy",
+    "Privacy-compliant personalization approach",
+    "Measurement plan aligns with KPI standards"
+  ],
+  "integration_notes": {
+    "upstream_dependencies": ["audience_suggester output"],
+    "downstream_consumers": ["experiment_blueprinter"],
+    "content_requirements": ["Content Recommendations API access", "Content topic/section availability"],
+    "technical_requirements": ["Web Experimentation platform", "Feature flag system"]
+  }
+}
