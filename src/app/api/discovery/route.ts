@@ -7,7 +7,7 @@ import { ToolDiscovery } from '@/lib/types';
  * Returns catalog of all available tools with their endpoints and schemas
  */
 
-export async function GET(request: NextRequest): NextResponse {
+export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
     const baseURL = getBaseURL();
 
@@ -285,7 +285,7 @@ export async function GET(request: NextRequest): NextResponse {
 /**
  * POST endpoint for tool registration validation
  */
-export async function POST(request: NextRequest): NextResponse {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     const body = await request.json();
     const { tool_id, validation_request } = body;

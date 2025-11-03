@@ -17,7 +17,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     if (!authResult.isValid) {
       const auditLog = createAuthAuditLog(request, authResult, 'content-lookup');
       console.error('Authentication failed:', auditLog);
-      return NextResponse.json(createAuthErrorResponse(authResult.error!));
+      return NextResponse.json(createAuthErrorResponse(authResult.error!), { status: 401 });
     }
 
     // Parse request body
@@ -102,7 +102,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
     const authResult = requireAuthentication(request);
     if (!authResult.isValid) {
-      return NextResponse.json(createAuthErrorResponse(authResult.error!));
+      return NextResponse.json(createAuthErrorResponse(authResult.error!), { status: 401 });
     }
 
     const url = new URL(request.url);

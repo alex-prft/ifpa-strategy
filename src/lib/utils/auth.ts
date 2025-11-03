@@ -98,18 +98,9 @@ export function createAuthAuditLog(
  * Create standard error response for authentication failures
  */
 export function createAuthErrorResponse(error: string, status: number = 401) {
-  return new Response(
-    JSON.stringify({
-      success: false,
-      error: error,
-      timestamp: new Date().toISOString()
-    }),
-    {
-      status,
-      headers: {
-        'Content-Type': 'application/json',
-        'WWW-Authenticate': 'Bearer realm="Opal Tools API"'
-      }
-    }
-  );
+  return {
+    success: false,
+    error: error,
+    timestamp: new Date().toISOString()
+  };
 }
