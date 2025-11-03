@@ -1,14 +1,29 @@
-# My Next.js App
+# Opal AI Personalization System 2025
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app), configured with TypeScript, Tailwind CSS, and ESLint.
+This is an advanced AI-powered personalization maturity assessment and strategy generation system built with [Next.js](https://nextjs.org), featuring comprehensive integration with the Optimizely ecosystem and designed for seamless Opal workflow automation.
 
-## Features
+## System Features
 
+### 🤖 AI-Powered Personalization Engine
+- **Maturity Assessment**: Scientific 6-category evaluation (1-5 scale)
+- **Audience Generation**: 3-5 data-driven segments using ODP + Salesforce
+- **Idea Creation**: 4-6 personalization concepts per audience
+- **Experiment Blueprints**: Production-ready specifications with statistical rigor
+- **Plan Composition**: Comprehensive strategy with 30/60/90 roadmaps
+
+### 🔧 Technical Architecture
 - ⚡ Next.js 16 with App Router
-- 🎨 Tailwind CSS for styling
 - 📝 TypeScript for type safety
-- 🧹 ESLint for code linting
-- 🚀 Ready for deployment to Vercel
+- 🛠️ 5 Custom Tools for Optimizely integration
+- 🔐 Bearer token authentication with audit logging
+- 📊 ID resolution priority enforcement
+- 🚀 Ready for Vercel deployment
+
+### 🎯 Opal Integration
+- **Tool Discovery**: Complete registry for Opal registration
+- **Specialized Agents**: JSON configurations for workflow automation
+- **Instructions**: Governance rules for KPIs, data privacy, and brand consistency
+- **Workflow Orchestration**: End-to-end personalization strategy generation
 
 ## Getting Started
 
@@ -46,7 +61,7 @@ gh auth login
 2. **Create GitHub repository and push code**:
 ```bash
 gh repo create my-nextjs-app --public --confirm
-git remote add origin https://github.com/YOUR_USERNAME/my-nextjs-app.git
+git remote add origin https://github.com/alex-prft/opal-2025.git
 git push -u origin main
 ```
 
@@ -65,7 +80,7 @@ git push -u origin main
    - Vercel will auto-detect Next.js and deploy
 
 3. **Option C: One-click deploy**
-   - Use this button: [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/YOUR_USERNAME/my-nextjs-app)
+   - Use this button: [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/alex-prft/opal-2025)
 
 ## Project Structure
 
