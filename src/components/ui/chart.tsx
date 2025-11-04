@@ -45,7 +45,7 @@ const ChartTooltip = React.forwardRef<
       <div
         ref={ref}
         className={cn(
-          "rounded-lg border bg-background p-2 shadow-sm",
+          "rounded-lg border bg-white p-2 shadow-sm",
           className
         )}
         {...props}
@@ -121,7 +121,7 @@ const ChartTooltipContent = React.forwardRef<
     <div
       ref={ref}
       className={cn(
-        "grid min-w-[8rem] items-start gap-1.5 rounded-lg border border-gray-200 bg-background px-2.5 py-1.5 text-xs shadow-xl",
+        "grid min-w-[8rem] items-start gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs shadow-xl",
         className
       )}
       {...props}
@@ -174,7 +174,7 @@ const ChartTooltipContent = React.forwardRef<
                       {itemConfig?.label || item.name || key}
                     </span>
                   </div>
-                  <span className="font-mono font-medium tabular-nums text-foreground">
+                  <span className="font-mono font-medium tabular-nums text-gray-900">
                     {item.value}
                   </span>
                 </div>

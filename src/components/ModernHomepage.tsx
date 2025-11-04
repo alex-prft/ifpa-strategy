@@ -190,7 +190,7 @@ export default function ModernHomepage() {
                       <div className="space-y-1 text-sm">
                         <div className="flex items-center gap-2">
                           <CheckCircle className="h-4 w-4 text-green-500" />
-                          <span>PMG Maturity Assessment</span>
+                          <span>Strategy Assessment</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <CheckCircle className="h-4 w-4 text-green-500" />
