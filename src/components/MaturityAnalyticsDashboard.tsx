@@ -299,7 +299,7 @@ export default function MaturityAnalyticsDashboard({ workflowResult }: MaturityA
                   maturity_plan.roadmap.phase_3_medium_term,
                   maturity_plan.roadmap.phase_4_long_term
                 ).slice(0, 6).map((item, index) => (
-                  <div key={index} className="flex items-start space-x-4 pb-4 border-b border-border/40">
+                  <div key={index} className="flex items-start space-x-4 pb-4 border-b border-gray-200">
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm">
                       {index + 1}
                     </div>
