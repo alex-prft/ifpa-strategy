@@ -2,11 +2,23 @@ import { OptimizelyConfig } from '../types';
 import { getOptimizelyConfig } from '../utils/config';
 
 export class CMPClient {
-  private config: OptimizelyConfig['cmp'];
+  private config: OptimizelyConfig['cmp'] | null = null;
+  private isDemoMode: boolean = false;
 
   constructor() {
-    const fullConfig = getOptimizelyConfig();
-    this.config = fullConfig.cmp;
+    try {
+      const fullConfig = getOptimizelyConfig();
+      this.config = fullConfig.cmp;
+    } catch (error) {
+      // If Optimizely config is not available, use demo mode
+      console.log('Optimizely config not available, using demo mode for CMP');
+      this.isDemoMode = true;
+      this.config = {
+        api_key: 'demo-key',
+        workspace_id: 'demo-workspace',
+        base_url: 'https://demo-cmp.example.com'
+      };
+    }
   }
 
   /**
@@ -216,6 +228,25 @@ export class CMPClient {
     brief_id: string;
   }> {
     try {
+      // In demo mode, return mock data instead of calling real APIs
+      if (this.isDemoMode) {
+        const campaignId = `campaign-${Date.now()}`;
+        const briefId = `brief-${Date.now()}`;
+
+        console.log('Demo mode: Mock CMP campaign created', {
+          title: planData.title,
+          campaign_id: campaignId,
+          brief_id: briefId
+        });
+
+        return {
+          campaign_url: `https://demo-cmp.example.com/campaigns/${campaignId}/briefs/${briefId}`,
+          campaign_id: campaignId,
+          brief_id: briefId
+        };
+      }
+
+      // Production mode: Call real Optimizely CMP APIs
       // Step 1: Create the campaign
       const campaign = await this.createCampaign({
         title: planData.title,

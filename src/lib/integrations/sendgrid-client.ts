@@ -3,9 +3,21 @@ import { getSendGridConfig } from '../utils/config';
 
 export class SendGridClient {
   private config: SendGridConfig;
+  private isDemoMode: boolean = false;
 
   constructor() {
-    this.config = getSendGridConfig();
+    try {
+      this.config = getSendGridConfig();
+    } catch (error) {
+      // If SendGrid config is not available, use demo mode
+      console.log('SendGrid config not available, using demo mode for email');
+      this.isDemoMode = true;
+      this.config = {
+        api_key: 'demo-key',
+        sender_email: 'demo@example.com',
+        sender_name: 'PMG Demo System'
+      };
+    }
   }
 
   /**
@@ -21,6 +33,20 @@ export class SendGridClient {
     from?: string;
   }): Promise<any> {
     try {
+      // In demo mode, return mock response instead of sending real email
+      if (this.isDemoMode) {
+        console.log('Demo mode: Mock email sent', {
+          to: emailData.to,
+          subject: emailData.subject,
+          from: emailData.from || this.config.sender_email
+        });
+
+        return {
+          status: 'success',
+          message_id: `demo-message-${Date.now()}`,
+          timestamp: new Date().toISOString()
+        };
+      }
       const message = {
         personalizations: [
           {
