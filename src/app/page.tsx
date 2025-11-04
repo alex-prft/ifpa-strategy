@@ -68,7 +68,7 @@ export default function Home() {
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8">
               <div className="text-center mb-8">
                 <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-                  Generate Your Personalization Maturity Plan
+                  Generate Your Optimizely Personalization Strategy
                 </h2>
                 <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
                   Accelerate your personalization and experimentation strategy with Opal AI
