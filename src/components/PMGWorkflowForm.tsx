@@ -337,7 +337,7 @@ export default function PMGWorkflowForm({ onWorkflowStart, onWorkflowComplete, i
             </>
           ) : (
             <>
-              🚀 Generate Maturity Plan
+              🚀 Start Your Personalization Strategy
             </>
           )}
         </button>
