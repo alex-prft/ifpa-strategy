@@ -2,7 +2,7 @@ import { OptimizelyConfig } from '../types';
 import { getOptimizelyConfig } from '../utils/config';
 
 export class CMPClient {
-  private config: OptimizelyConfig['cmp'] | null = null;
+  private config: OptimizelyConfig['cmp'];
   private isDemoMode: boolean = false;
 
   constructor() {
