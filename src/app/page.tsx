@@ -36,7 +36,7 @@ export default function Home() {
                   Opal Personalization Generator from Perficient
                 </h1>
                 <p className="text-gray-600 dark:text-gray-300">
-                  Generate your personalization with your Optimizely data and other marketing technology
+                  AI Personalization Strategy with your Optimizely Data and Martec Tools
                 </p>
               </div>
             </div>
