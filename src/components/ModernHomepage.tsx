@@ -42,6 +42,22 @@ export default function ModernHomepage() {
     setShowLoadingAnimation(false);
   };
 
+  const handlePerficientClick = () => {
+    // Scroll to the form section and prefill marketing tech
+    const formSection = document.getElementById('assessment-form');
+    if (formSection) {
+      formSection.scrollIntoView({ behavior: 'smooth' });
+
+      // Trigger prefill via a custom event
+      const prefillEvent = new CustomEvent('prefillMarketingTech', {
+        detail: {
+          technologies: ['Salesforce CRM', 'Salesforce Data Studio', 'Salesforce Marketing Cloud', 'Snowflake', 'Sitecore', 'Adobe Analytics', 'Contentsquare']
+        }
+      });
+      window.dispatchEvent(prefillEvent);
+    }
+  };
+
   const features = [
     {
       icon: <Brain className="h-6 w-6" />,
@@ -225,11 +241,16 @@ export default function ModernHomepage() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <Button variant="secondary" size="sm" className="gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                className="gap-2 cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
+                onClick={handlePerficientClick}
+              >
                 <Zap className="h-4 w-4" />
-                Powered by Perficient
+                Perficient AI App
               </Button>
-              <span className="text-sm text-muted-foreground">v1.0.0</span>
+              <span className="text-sm text-muted-foreground">BETA v1.0</span>
             </div>
           </div>
         </div>

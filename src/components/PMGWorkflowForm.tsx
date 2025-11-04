@@ -16,6 +16,7 @@ export default function PMGWorkflowForm({ onWorkflowStart, onWorkflowComplete, i
     company_size: 'medium',
     current_capabilities: [],
     business_objectives: [],
+    additional_marketing_technology: [],
     timeline_preference: '12-months',
     budget_range: '100k-500k',
     recipients: []
@@ -23,6 +24,7 @@ export default function PMGWorkflowForm({ onWorkflowStart, onWorkflowComplete, i
 
   const [currentCapability, setCurrentCapability] = useState('');
   const [currentObjective, setCurrentObjective] = useState('');
+  const [currentMarketingTech, setCurrentMarketingTech] = useState('');
   const [currentRecipient, setCurrentRecipient] = useState('');
 
   // Perficient auto-fill function
@@ -37,16 +39,27 @@ export default function PMGWorkflowForm({ onWorkflowStart, onWorkflowComplete, i
     }));
   };
 
-  // Expose function to window for header button
+  // Expose function to window for header button and handle prefill events
   useEffect(() => {
     if (typeof window !== 'undefined') {
       (window as any).fillPerficientData = fillPerficientData;
-    }
-    return () => {
-      if (typeof window !== 'undefined') {
+
+      // Listen for marketing tech prefill event
+      const handleMarketingTechPrefill = (event: CustomEvent) => {
+        const technologies = event.detail.technologies;
+        setFormData(prev => ({
+          ...prev,
+          additional_marketing_technology: technologies
+        }));
+      };
+
+      window.addEventListener('prefillMarketingTech', handleMarketingTechPrefill as EventListener);
+
+      return () => {
         delete (window as any).fillPerficientData;
-      }
-    };
+        window.removeEventListener('prefillMarketingTech', handleMarketingTechPrefill as EventListener);
+      };
+    }
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -101,6 +114,16 @@ export default function PMGWorkflowForm({ onWorkflowStart, onWorkflowComplete, i
     }
   };
 
+  const addMarketingTech = () => {
+    if (currentMarketingTech.trim() && !formData.additional_marketing_technology.includes(currentMarketingTech.trim())) {
+      setFormData(prev => ({
+        ...prev,
+        additional_marketing_technology: [...prev.additional_marketing_technology, currentMarketingTech.trim()]
+      }));
+      setCurrentMarketingTech('');
+    }
+  };
+
   const addRecipient = () => {
     if (currentRecipient.trim() && !formData.recipients.includes(currentRecipient.trim())) {
       setFormData(prev => ({
@@ -117,7 +140,7 @@ export default function PMGWorkflowForm({ onWorkflowStart, onWorkflowComplete, i
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form id="assessment-form" onSubmit={handleSubmit} className="space-y-6">
       {/* Basic Information */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
@@ -254,6 +277,47 @@ export default function PMGWorkflowForm({ onWorkflowStart, onWorkflowComplete, i
                 type="button"
                 onClick={() => removeItem(formData.business_objectives, index, 'business_objectives')}
                 className="ml-2 text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-200"
+              >
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Additional Marketing Technology */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          Additional Marketing Technology
+        </label>
+        <div className="flex gap-2 mb-2">
+          <input
+            type="text"
+            value={currentMarketingTech}
+            onChange={(e) => setCurrentMarketingTech(e.target.value)}
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            placeholder="e.g., Salesforce CRM, Adobe Analytics, Contentsquare"
+            onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addMarketingTech())}
+          />
+          <button
+            type="button"
+            onClick={addMarketingTech}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            Add
+          </button>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {formData.additional_marketing_technology.map((tech, index) => (
+            <span
+              key={index}
+              className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
+            >
+              {tech}
+              <button
+                type="button"
+                onClick={() => removeItem(formData.additional_marketing_technology, index, 'additional_marketing_technology')}
+                className="ml-2 text-purple-600 hover:text-purple-800 dark:text-purple-400 dark:hover:text-purple-200"
               >
                 ×
               </button>

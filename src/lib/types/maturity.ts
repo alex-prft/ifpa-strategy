@@ -187,6 +187,7 @@ export interface PMGWorkflowInput {
   company_size: 'small' | 'medium' | 'large' | 'enterprise';
   current_capabilities: string[];
   business_objectives: string[];
+  additional_marketing_technology: string[];
   timeline_preference: '6-months' | '12-months' | '18-months' | '24-months';
   budget_range: 'under-100k' | '100k-500k' | '500k-1m' | 'over-1m';
   recipients: string[];
