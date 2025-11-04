@@ -9,7 +9,7 @@ export async function GET(): Promise<NextResponse> {
     const discoveryResponse = {
       functions: [
         {
-          name: "audience_lookup",
+          name: "odp_audience_profile_lookup",
           description: "Look up user profile and segments from Optimizely Data Platform and Salesforce integration",
           parameters: [
             {

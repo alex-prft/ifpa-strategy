@@ -9,7 +9,7 @@ export async function GET(): Promise<NextResponse> {
     const discoveryResponse = {
       functions: [
         {
-          name: "generate_maturity_plan",
+          name: "pmg_personalization_maturity_assessment",
           description: "Complete personalization maturity assessment and strategic planning workflow with 4-phase framework",
           parameters: [
             {

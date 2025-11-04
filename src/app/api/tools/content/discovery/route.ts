@@ -9,7 +9,7 @@ export async function GET(): Promise<NextResponse> {
     const discoveryResponse = {
       functions: [
         {
-          name: "content_recommendations",
+          name: "ai_content_personalization_recommendations",
           description: "Get AI-powered content recommendations based on audience segments and user behavior",
           parameters: [
             {

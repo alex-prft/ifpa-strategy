@@ -9,7 +9,7 @@ export async function GET(): Promise<NextResponse> {
     const discoveryResponse = {
       functions: [
         {
-          name: "send_notification",
+          name: "sendgrid_personalization_plan_notification",
           description: "Send email notifications and plan delivery via SendGrid integration",
           parameters: [
             {

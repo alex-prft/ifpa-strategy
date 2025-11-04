@@ -9,7 +9,7 @@ export async function GET(): Promise<NextResponse> {
     const discoveryResponse = {
       functions: [
         {
-          name: "create_campaign",
+          name: "cmp_create_personalization_campaign",
           description: "Create personalization campaigns and briefs with shareable URLs in Campaign Management Platform",
           parameters: [
             {

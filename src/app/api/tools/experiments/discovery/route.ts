@@ -9,7 +9,7 @@ export async function GET(): Promise<NextResponse> {
     const discoveryResponse = {
       functions: [
         {
-          name: "experiment_analytics",
+          name: "optimizely_experiment_analytics_data",
           description: "Access historical experiment data and performance metrics from Optimizely Experimentation platform",
           parameters: [
             {
