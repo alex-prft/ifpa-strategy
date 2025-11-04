@@ -8,10 +8,18 @@ import { getBaseURL, getAPISecretKey } from '../utils/config';
 export class OPALAgentClient {
   private baseURL: string;
   private apiKey: string;
+  private isDemoMode: boolean;
 
   constructor() {
     this.baseURL = getBaseURL();
     this.apiKey = getAPISecretKey();
+
+    // Check if we're in demo mode (missing external API keys)
+    this.isDemoMode = !process.env.ODP_API_KEY || !process.env.CMP_API_KEY || !process.env.SENDGRID_API_KEY;
+
+    if (this.isDemoMode) {
+      console.log('OPAL Agent Client running in demo mode - external APIs will be mocked');
+    }
   }
 
   /**
@@ -23,6 +31,20 @@ export class OPALAgentClient {
     content: string;
     tags: string[];
   }): Promise<{ campaign_url: string; campaign_id: string; brief_id: string }> {
+    // In demo mode, return mock data
+    if (this.isDemoMode) {
+      console.log('Demo mode: Mock CMP campaign created', {
+        campaign_name: campaignData.campaign_name,
+        brief_description: campaignData.brief_description
+      });
+
+      return {
+        campaign_url: `https://demo-cmp.example.com/campaigns/demo-${Date.now()}`,
+        campaign_id: `demo-campaign-${Date.now()}`,
+        brief_id: `demo-brief-${Date.now()}`
+      };
+    }
+
     try {
       const response = await fetch(`${this.baseURL}/api/tools/cmp`, {
         method: 'POST',
@@ -64,6 +86,20 @@ export class OPALAgentClient {
     plan_summary: string;
     sender_name: string;
   }): Promise<{ status: 'success' | 'failed'; message_id?: string }> {
+    // In demo mode, return mock notification result
+    if (this.isDemoMode) {
+      console.log('Demo mode: Mock notification sent', {
+        to: notificationData.to,
+        plan_title: notificationData.plan_title,
+        sender_name: notificationData.sender_name
+      });
+
+      return {
+        status: 'success',
+        message_id: `demo-message-${Date.now()}`
+      };
+    }
+
     try {
       const response = await fetch(`${this.baseURL}/api/tools/notify`, {
         method: 'POST',

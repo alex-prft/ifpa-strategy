@@ -42,47 +42,22 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       // Step 1: Generate Maturity Assessment using AI
       const maturityPlan = await generateMaturityPlan(workflowInput);
 
-      // Check if we have environment variables for external APIs
-      const hasOptimizelyConfig = process.env.ODP_API_KEY && process.env.CMP_API_KEY;
-      const hasSendGridConfig = process.env.SENDGRID_API_KEY;
+      // Step 2: Create CMP Campaign with the plan (auto-detects demo mode)
+      const cmpResult = await opalClient.createCMPCampaign({
+        campaign_name: `PMG Maturity Plan - ${workflowInput.client_name}`,
+        brief_description: `Personalization maturity assessment and 4-phase implementation plan for ${workflowInput.client_name}`,
+        content: JSON.stringify(maturityPlan),
+        tags: ['pmg', 'maturity-plan', 'personalization']
+      });
 
-      let cmpResult, notificationResult;
-
-      if (hasOptimizelyConfig) {
-        // Step 2: Create CMP Campaign with the plan
-        cmpResult = await opalClient.createCMPCampaign({
-          campaign_name: `PMG Maturity Plan - ${workflowInput.client_name}`,
-          brief_description: `Personalization maturity assessment and 4-phase implementation plan for ${workflowInput.client_name}`,
-          content: JSON.stringify(maturityPlan),
-          tags: ['pmg', 'maturity-plan', 'personalization']
-        });
-      } else {
-        // Demo mode: Mock CMP result
-        console.log('Demo mode: Skipping CMP campaign creation');
-        cmpResult = {
-          campaign_url: `https://demo-cmp.example.com/campaigns/demo-${Date.now()}`,
-          campaign_id: `demo-campaign-${Date.now()}`,
-          brief_id: `demo-brief-${Date.now()}`
-        };
-      }
-
-      if (hasSendGridConfig) {
-        // Step 3: Send Notification with Plan Details
-        notificationResult = await opalClient.sendNotification({
-          to: workflowInput.recipients,
-          plan_title: `PMG Maturity Plan - ${workflowInput.client_name}`,
-          cmp_url: cmpResult.campaign_url,
-          plan_summary: generateExecutiveSummary(maturityPlan),
-          sender_name: 'PMG System'
-        });
-      } else {
-        // Demo mode: Mock notification result
-        console.log('Demo mode: Skipping email notification');
-        notificationResult = {
-          status: 'success' as const,
-          message_id: `demo-message-${Date.now()}`
-        };
-      }
+      // Step 3: Send Notification with Plan Details (auto-detects demo mode)
+      const notificationResult = await opalClient.sendNotification({
+        to: workflowInput.recipients,
+        plan_title: `PMG Maturity Plan - ${workflowInput.client_name}`,
+        cmp_url: cmpResult.campaign_url,
+        plan_summary: generateExecutiveSummary(maturityPlan),
+        sender_name: 'PMG System'
+      });
 
       // Construct workflow output
       const workflowOutput: PMGWorkflowOutput = {
