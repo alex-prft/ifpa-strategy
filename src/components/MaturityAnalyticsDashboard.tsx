@@ -101,6 +101,7 @@ export default function MaturityAnalyticsDashboard({ workflowResult }: MaturityA
           <TabsTrigger value="capabilities">Capabilities</TabsTrigger>
           <TabsTrigger value="timeline">Timeline</TabsTrigger>
           <TabsTrigger value="investment">Investment</TabsTrigger>
+          <TabsTrigger value="recommendations">AI Recommendations</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
@@ -416,6 +417,167 @@ export default function MaturityAnalyticsDashboard({ workflowResult }: MaturityA
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="recommendations" className="space-y-4">
+          {maturity_plan.intelligent_recommendations && (
+            <>
+              {/* Quick Wins Section */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>🚀 Quick Win Opportunities</CardTitle>
+                  <CardDescription>
+                    High-impact personalization tactics you can implement immediately
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {maturity_plan.intelligent_recommendations.quick_wins.slice(0, 4).map((win, index) => (
+                      <div key={index} className="p-4 border rounded-lg bg-gradient-to-br from-green-50 to-blue-50">
+                        <h4 className="font-semibold text-green-800 mb-2">{win.title}</h4>
+                        <p className="text-sm text-gray-600 mb-3">{win.description}</p>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="bg-green-100 text-green-800 px-2 py-1 rounded">
+                            {win.complexity} complexity
+                          </span>
+                          <span className="text-gray-500">{win.implementationTime}</span>
+                        </div>
+                        <div className="mt-2 text-xs text-blue-600 bg-blue-100 p-2 rounded">
+                          💡 {win.example}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Omnichannel Strategies */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>📱 Omnichannel Personalization Strategies</CardTitle>
+                  <CardDescription>
+                    Channel-specific tactics powered by your marketing technology stack
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-6 md:grid-cols-2">
+                    {maturity_plan.intelligent_recommendations.omnichannel_strategies.map((strategy, index) => (
+                      <div key={index} className="p-4 border rounded-lg">
+                        <div className="flex items-center gap-2 mb-3">
+                          <span className="text-2xl">
+                            {strategy.channel === 'email' && '📧'}
+                            {strategy.channel === 'web' && '🌐'}
+                            {strategy.channel === 'sms' && '📱'}
+                            {strategy.channel === 'paid-ads' && '🎯'}
+                            {strategy.channel === 'social' && '📲'}
+                            {strategy.channel === 'mobile' && '📲'}
+                          </span>
+                          <div>
+                            <h4 className="font-semibold capitalize">{strategy.channel} Personalization</h4>
+                            <p className="text-sm text-gray-600">{strategy.strategy}</p>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <h5 className="text-sm font-medium text-gray-700">Key Tactics:</h5>
+                          <ul className="text-sm space-y-1">
+                            {strategy.tactics.slice(0, 3).map((tactic, i) => (
+                              <li key={i} className="flex items-start gap-2">
+                                <span className="text-green-500 mt-1">✓</span>
+                                <span>{tactic}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                        <div className="mt-4 p-3 bg-blue-50 rounded text-sm">
+                          <div className="font-medium text-blue-800">Expected Impact:</div>
+                          <div className="text-blue-700">{strategy.expectedLift}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Technology Synergies */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>🔗 Technology Integration Opportunities</CardTitle>
+                  <CardDescription>
+                    Maximize ROI by leveraging synergies between your existing tools
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {maturity_plan.intelligent_recommendations.technology_synergies.map((synergy, index) => (
+                      <div key={index} className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border-l-4 border-purple-400">
+                        <p className="text-gray-700">{synergy}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Advanced Use Cases */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>🎯 Advanced Personalization Use Cases</CardTitle>
+                  <CardDescription>
+                    Sophisticated strategies tailored to your technology ecosystem
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-4">
+                    {maturity_plan.intelligent_recommendations.personalization_use_cases.slice(0, 6).map((useCase, index) => (
+                      <div key={index} className="p-4 border rounded-lg hover:shadow-md transition-shadow">
+                        <div className="flex items-start justify-between mb-3">
+                          <h4 className="font-semibold text-gray-800">{useCase.title}</h4>
+                          <div className="flex gap-2">
+                            <span className={`px-2 py-1 text-xs rounded ${
+                              useCase.complexity === 'low' ? 'bg-green-100 text-green-800' :
+                              useCase.complexity === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-red-100 text-red-800'
+                            }`}>
+                              {useCase.complexity}
+                            </span>
+                            <span className={`px-2 py-1 text-xs rounded ${
+                              useCase.businessImpact === 'high' ? 'bg-blue-100 text-blue-800' :
+                              useCase.businessImpact === 'medium' ? 'bg-gray-100 text-gray-800' :
+                              'bg-gray-100 text-gray-600'
+                            }`}>
+                              {useCase.businessImpact} impact
+                            </span>
+                          </div>
+                        </div>
+                        <p className="text-gray-600 mb-3">{useCase.description}</p>
+                        <div className="grid md:grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <div className="font-medium text-gray-700 mb-1">Technologies:</div>
+                            <div className="flex flex-wrap gap-1">
+                              {useCase.technologies.map((tech, i) => (
+                                <span key={i} className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">
+                                  {tech}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="font-medium text-gray-700 mb-1">Key Metrics:</div>
+                            <div className="text-gray-600">
+                              {useCase.kpis.slice(0, 2).join(', ')}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="mt-3 p-3 bg-gray-50 rounded text-sm">
+                          <div className="font-medium text-gray-700">Example:</div>
+                          <div className="text-gray-600">{useCase.example}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          )}
         </TabsContent>
       </Tabs>
     </div>

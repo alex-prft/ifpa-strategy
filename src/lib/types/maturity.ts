@@ -144,6 +144,14 @@ export interface MaturityPlan {
   budget_estimates: BudgetEstimate[];
   resource_requirements: ResourceRequirement[];
   vendor_recommendations: VendorRecommendation[];
+
+  // RAG-Generated Intelligent Recommendations
+  intelligent_recommendations?: {
+    personalization_use_cases: any[];
+    omnichannel_strategies: any[];
+    technology_synergies: string[];
+    quick_wins: any[];
+  };
 }
 
 export interface RoadmapItem {

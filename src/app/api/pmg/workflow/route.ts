@@ -3,6 +3,7 @@ import { requireAuthentication, createAuthErrorResponse, createAuthAuditLog } fr
 import { APIResponse } from '@/lib/types';
 import { PMGWorkflowInput, PMGWorkflowOutput, MaturityPlan, MaturityPhase } from '@/lib/types/maturity';
 import { OPALAgentClient } from '@/lib/integrations/opal-agent-client';
+import { personalizationRAG } from '@/lib/rag/personalization-rag';
 
 /**
  * PMG Workflow API - Complete Personalization Maturity Generation
@@ -178,6 +179,9 @@ async function generateMaturityPlan(input: PMGWorkflowInput): Promise<MaturityPl
   const currentPhase = determineCurrentPhase(input);
   const targetPhase = determineTargetPhase(input);
 
+  // Generate RAG-powered intelligent recommendations
+  const ragRecommendations = personalizationRAG.generateRecommendations(input);
+
   const maturityPlan: MaturityPlan = {
     plan_id: planId,
     client_name: input.client_name,
@@ -194,7 +198,13 @@ async function generateMaturityPlan(input: PMGWorkflowInput): Promise<MaturityPl
     privacy_considerations: generatePrivacyConsiderations(),
     budget_estimates: generateBudgetEstimates(input),
     resource_requirements: generateResourceRequirements(input),
-    vendor_recommendations: generateVendorRecommendations(input)
+    vendor_recommendations: generateVendorRecommendations(input),
+    intelligent_recommendations: {
+      personalization_use_cases: ragRecommendations.useCases,
+      omnichannel_strategies: ragRecommendations.omnichannelStrategies,
+      technology_synergies: ragRecommendations.technologySynergies,
+      quick_wins: ragRecommendations.quickWins
+    }
   };
 
   return maturityPlan;
