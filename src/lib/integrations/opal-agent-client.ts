@@ -17,6 +17,13 @@ export class OPALAgentClient {
     // Check if we're in demo mode (missing external API keys)
     this.isDemoMode = !process.env.ODP_API_KEY || !process.env.CMP_API_KEY || !process.env.SENDGRID_API_KEY;
 
+    console.log('OPAL Agent Client environment check:', {
+      ODP_API_KEY: process.env.ODP_API_KEY ? 'present' : 'missing',
+      CMP_API_KEY: process.env.CMP_API_KEY ? 'present' : 'missing',
+      SENDGRID_API_KEY: process.env.SENDGRID_API_KEY ? 'present' : 'missing',
+      isDemoMode: this.isDemoMode
+    });
+
     if (this.isDemoMode) {
       console.log('OPAL Agent Client running in demo mode - external APIs will be mocked');
     }
