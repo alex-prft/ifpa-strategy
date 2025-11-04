@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PMGWorkflowInput, PMGWorkflowOutput } from '@/lib/types/maturity';
 
 interface PMGWorkflowFormProps {
@@ -24,6 +24,30 @@ export default function PMGWorkflowForm({ onWorkflowStart, onWorkflowComplete, i
   const [currentCapability, setCurrentCapability] = useState('');
   const [currentObjective, setCurrentObjective] = useState('');
   const [currentRecipient, setCurrentRecipient] = useState('');
+
+  // Perficient auto-fill function
+  const fillPerficientData = () => {
+    setFormData(prev => ({
+      ...prev,
+      client_name: prev.client_name ? `${prev.client_name} - Perficient` : 'Perficient',
+      industry: 'Agency Consulting Services',
+      current_capabilities: ['Email', 'Experimentation', 'Personalization', 'Mobile Apps', 'Commerce', 'CMS'],
+      business_objectives: ['Increase Lead Generation', 'Optimizely Customer Success', 'Webinar Registrations'],
+      recipients: ['alex.harris@perficient.com']
+    }));
+  };
+
+  // Expose function to window for header button
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).fillPerficientData = fillPerficientData;
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        delete (window as any).fillPerficientData;
+      }
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -33,17 +33,25 @@ export default function Home() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  Opal Personalization Maturity Generator
+                  Opal Personalization Generator from Perficient
                 </h1>
                 <p className="text-gray-600 dark:text-gray-300">
-                  PMG - Generate comprehensive personalization maturity plans with 4-phase implementation roadmaps
+                  Generate your personalization with your Optimizely data and other marketing technology
                 </p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                🟢 Production Ready
-              </span>
+              <button
+                onClick={() => {
+                  // This will be handled by the form component via a prop
+                  if (typeof window !== 'undefined' && (window as any).fillPerficientData) {
+                    (window as any).fillPerficientData();
+                  }
+                }}
+                className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-200 dark:hover:bg-blue-800 transition-colors cursor-pointer"
+              >
+                🚀 Powered by Perficient
+              </button>
               <span className="text-sm text-gray-500 dark:text-gray-400">
                 v1.0.0
               </span>
@@ -123,7 +131,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex justify-between items-center">
             <div className="text-sm text-gray-500 dark:text-gray-400">
-              © 2025 PMG - Personalization Maturity Generator. Powered by Opal AI.
+              © 2025 Opal Personalization Generator from Perficient. Powered by Opal AI.
             </div>
             <div className="flex space-x-6">
               <a href="/api/pmg/workflow" className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
