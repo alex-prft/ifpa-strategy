@@ -337,7 +337,7 @@ export default function PMGWorkflowForm({ onWorkflowStart, onWorkflowComplete, i
             </>
           ) : (
             <>
-              🚀 Start Your Personalization Strategy
+              🚀 Start Your Strategy
             </>
           )}
         </button>

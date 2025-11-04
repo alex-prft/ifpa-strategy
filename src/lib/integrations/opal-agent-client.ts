@@ -14,8 +14,8 @@ export class OPALAgentClient {
     this.baseURL = getBaseURL();
     this.apiKey = getAPISecretKey();
 
-    // For now, always run in demo mode to test the functionality
-    this.isDemoMode = true;
+    // Check if we're in demo mode (missing external API keys)
+    this.isDemoMode = !process.env.ODP_API_KEY || !process.env.CMP_API_KEY || !process.env.SENDGRID_API_KEY;
 
     console.log('OPAL Agent Client environment check:', {
       ODP_API_KEY: process.env.ODP_API_KEY ? 'present' : 'missing',
