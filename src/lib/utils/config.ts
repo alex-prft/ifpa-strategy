@@ -1,4 +1,4 @@
-import { OptimizelyConfig, MSGraphConfig } from '../types';
+import { OptimizelyConfig, MSGraphConfig, SendGridConfig } from '../types';
 
 // Environment configuration getter with validation
 export function getOptimizelyConfig(): OptimizelyConfig {
@@ -71,6 +71,25 @@ export function getAPISecretKey(): string {
     throw new Error('Missing required environment variable: API_SECRET_KEY');
   }
   return secretKey;
+}
+
+export function getSendGridConfig(): SendGridConfig {
+  const requiredEnvVars = [
+    'SENDGRID_API_KEY',
+    'SENDGRID_SENDER_EMAIL'
+  ];
+
+  for (const envVar of requiredEnvVars) {
+    if (!process.env[envVar]) {
+      throw new Error(`Missing required environment variable: ${envVar}`);
+    }
+  }
+
+  return {
+    api_key: process.env.SENDGRID_API_KEY!,
+    sender_email: process.env.SENDGRID_SENDER_EMAIL!,
+    sender_name: process.env.SENDGRID_SENDER_NAME || 'Opal AI Personalization System'
+  };
 }
 
 export function getBaseURL(): string {

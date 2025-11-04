@@ -187,3 +187,9 @@ export interface MSGraphConfig {
   client_secret: string;
   sender_email: string;
 }
+
+export interface SendGridConfig {
+  api_key: string;
+  sender_email: string;
+  sender_name?: string;
+}

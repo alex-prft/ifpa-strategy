@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { MSGraphClient } from '@/lib/integrations/msgraph-client';
+import { SendGridClient } from '@/lib/integrations/sendgrid-client';
 import { requireAuthentication, createAuthErrorResponse, createAuthAuditLog } from '@/lib/utils/auth';
 import { APIResponse, NotifyToolResponse } from '@/lib/types';
 
 /**
  * Notify Tool - com.acme.notify
- * Send email notifications to stakeholders via Microsoft Graph
+ * Send email notifications to stakeholders via SendGrid
  */
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
@@ -40,12 +40,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }, { status: 400 });
     }
 
-    // Initialize Microsoft Graph client
-    const msGraphClient = new MSGraphClient();
+    // Initialize SendGrid client
+    const sendGridClient = new SendGridClient();
 
     try {
       // Validate email addresses
-      const validationResult = msGraphClient.validateEmailAddresses(to);
+      const validationResult = sendGridClient.validateEmailAddresses(to);
 
       if (validationResult.invalid.length > 0) {
         console.warn('Invalid email addresses detected:', validationResult.invalid);
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       // Check if this is a plan notification or custom email
       if (plan_title && cmp_url) {
         // Send structured plan notification
-        emailResult = await msGraphClient.sendPlanNotification({
+        emailResult = await sendGridClient.sendPlanNotification({
           recipients: validationResult.valid,
           plan_title,
           cmp_url,
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           }, { status: 400 });
         }
 
-        emailResult = await msGraphClient.sendEmail({
+        emailResult = await sendGridClient.sendEmail({
           to: validationResult.valid,
           subject: subject!,
           html_body: html,
@@ -120,7 +120,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       });
 
     } catch (emailError) {
-      console.error('Microsoft Graph email error:', emailError);
+      console.error('SendGrid email error:', emailError);
 
       return NextResponse.json<APIResponse<NotifyToolResponse>>({
         success: false,
@@ -175,7 +175,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({
       tool_id: 'com.acme.notify',
       name: 'Notify Tool',
-      description: 'Send email notifications to stakeholders via Microsoft Graph',
+      description: 'Send email notifications to stakeholders via SendGrid',
       version: '1.0.0',
       status: 'healthy',
       endpoints: {
@@ -206,7 +206,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         }
       },
       supported_templates: ['plan_notification', 'custom'],
-      email_provider: 'Microsoft Graph',
+      email_provider: 'SendGrid',
       timestamp: new Date().toISOString()
     });
 

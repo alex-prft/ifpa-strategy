@@ -98,6 +98,69 @@ my-nextjs-app/
 └── vercel.json
 ```
 
+## Environment Variables
+
+The application requires several environment variables to be configured. Create a `.env.local` file in the root directory:
+
+### Required Variables
+
+#### Optimizely Data Platform (ODP)
+```bash
+ODP_API_KEY=your_odp_api_key
+ODP_PROJECT_ID=your_odp_project_id
+ODP_BASE_URL=https://function.zaius.com/twilio_segment  # Optional, defaults shown
+```
+
+#### Optimizely Experimentation
+```bash
+EXPERIMENTATION_API_KEY=your_experimentation_api_key
+EXPERIMENTATION_PROJECT_ID=your_experimentation_project_id
+EXPERIMENTATION_BASE_URL=https://api.optimizely.com/v2  # Optional, defaults shown
+```
+
+#### Optimizely Content Recommendations
+```bash
+CONTENT_RECS_API_KEY=your_content_recs_api_key
+CONTENT_RECS_ACCOUNT_ID=your_content_recs_account_id
+CONTENT_RECS_BASE_URL=https://api.idio.co  # Optional, defaults shown
+```
+
+#### Optimizely CMP (Campaign Management Platform)
+```bash
+CMP_API_KEY=your_cmp_api_key
+CMP_WORKSPACE_ID=your_cmp_workspace_id
+CMP_BASE_URL=https://api.optimizely.com/v2  # Optional, defaults shown
+```
+
+#### SendGrid Email Service
+```bash
+SENDGRID_API_KEY=your_sendgrid_api_key
+SENDGRID_SENDER_EMAIL=noreply@yourdomain.com
+SENDGRID_SENDER_NAME="Opal AI Personalization System"  # Optional, defaults shown
+```
+
+#### Application Configuration
+```bash
+API_SECRET_KEY=your_secure_secret_key_for_api_authentication
+NEXT_PUBLIC_APP_URL=https://your-domain.vercel.app  # Optional, defaults to localhost:3000
+```
+
+### Vercel Deployment
+
+When deploying to Vercel, add these environment variables in your project settings:
+
+1. Go to your Vercel project dashboard
+2. Navigate to Settings → Environment Variables
+3. Add each variable with its corresponding value
+4. Select the appropriate environments (Production, Preview, Development)
+
+### Security Notes
+
+- Never commit `.env.local` or `.env` files to version control
+- Use strong, unique values for `API_SECRET_KEY`
+- Ensure SendGrid API key has appropriate permissions for sending emails
+- Validate that all Optimizely API keys have the necessary scopes
+
 ## Available Scripts
 
 - `npm run dev` - Start development server
