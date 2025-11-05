@@ -7,6 +7,12 @@ set -e  # Exit on any error
 
 echo "🚀 Starting production deployment..."
 
+# Ensure Node.js 20 is being used
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+nvm use 20
+echo "📦 Using Node.js $(node -v)"
+
 # Source environment variables
 if [ -f ".env.local" ]; then
     source .env.local
