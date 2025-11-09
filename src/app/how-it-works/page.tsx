@@ -4,119 +4,104 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
   Sparkles,
-  ArrowLeft,
-  Brain,
+  ChefHat,
   Database,
-  Zap,
-  BarChart3,
   Target,
-  TrendingUp,
-  Users,
-  Cog,
-  ChevronRight,
-  CheckCircle
+  BookOpen,
+  Palette,
+  MessageSquare,
+  CheckCircle,
+  ChevronRight
 } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function HowItWorksPage() {
-  const maturityPhases = [
+  const cookingSteps = [
     {
-      phase: "Crawl",
-      title: "Foundation Building",
-      description: "A/B testing and simple personalization",
-      icon: "🐛",
-      color: "from-red-500/10 to-red-500/5 border-red-200",
-      details: [
-        "Basic A/B testing setup",
-        "Simple audience segmentation",
-        "First data collection processes",
-        "Foundation measurement framework"
-      ]
-    },
-    {
-      phase: "Walk",
-      title: "Structured Growth",
-      description: "Advanced experimentation and data-driven audiences",
-      icon: "🚶",
-      color: "from-yellow-500/10 to-yellow-500/5 border-yellow-200",
-      details: [
-        "Multi-variate testing programs",
-        "Advanced audience targeting",
-        "Cross-channel data integration",
-        "Automated campaign optimization"
-      ]
-    },
-    {
-      phase: "Run",
-      title: "Advanced Execution",
-      description: "Smart personalization and integrated systems",
-      icon: "🏃",
-      color: "from-green-500/10 to-green-500/5 border-green-200",
-      details: [
-        "AI-powered personalization",
-        "Real-time content optimization",
-        "Integrated martech stack",
-        "Advanced analytics & attribution"
-      ]
-    },
-    {
-      phase: "Fly",
-      title: "Mature Optimization",
-      description: "AI-powered omnichannel experiences",
-      icon: "🦅",
+      step: "01",
+      title: "Gather the Ingredients",
+      subtitle: "Data Collection & Context",
+      icon: <Database className="h-8 w-8" />,
+      description: "OSA collects everything needed for the perfect strategy dish",
+      ingredients: [
+        { name: "Data & Insights", source: "from Optimizely and other sources", service: "Ingestion & Orchestration Service" },
+        { name: "Business Context", source: "objectives and constraints", service: "Strategy Intake Service" },
+        { name: "Preferences & Policies", source: "budget, risk tolerance, maturity", service: "Preferences & Policy Service" }
+      ],
       color: "from-blue-500/10 to-blue-500/5 border-blue-200",
-      details: [
-        "Fully automated personalization",
-        "Predictive customer journey mapping",
-        "Cross-channel experience orchestration",
-        "Advanced AI and machine learning"
-      ]
-    }
-  ];
-
-  const engineCapabilities = [
-    {
-      icon: <Brain className="h-6 w-6" />,
-      title: "AI Analysis Engine",
-      description: "Advanced machine learning algorithms analyze your current technology stack, business goals, and market position to identify optimization opportunities."
+      iconColor: "text-blue-600 bg-blue-100"
     },
     {
-      icon: <Database className="h-6 w-6" />,
-      title: "Data Integration Layer",
-      description: "Seamlessly connects with your existing martech tools like Optimizely, Salesforce, Adobe, and more to understand your current capabilities."
+      step: "02",
+      title: "Use Proven Recipes",
+      subtitle: "Industry Best Practices",
+      icon: <BookOpen className="h-8 w-8" />,
+      description: "Standard recipes ensure quality and consistency",
+      ingredients: [
+        { name: "Industry Standards", source: "proven methodologies", service: "Knowledge & Retrieval Service" },
+        { name: "Best Practices", source: "tested strategies", service: "Knowledge & Retrieval Service" },
+        { name: "Success Patterns", source: "validated approaches", service: "Knowledge & Retrieval Service" }
+      ],
+      color: "from-green-500/10 to-green-500/5 border-green-200",
+      iconColor: "text-green-600 bg-green-100"
     },
     {
-      icon: <Target className="h-6 w-6" />,
-      title: "Strategic Roadmapping",
-      description: "Generates personalized, phased roadmaps with specific milestones, timelines, and success metrics tailored to your organization's maturity level."
+      step: "03",
+      title: "Customize Your Meal Plan",
+      subtitle: "Personalized Strategy Creation",
+      icon: <Target className="h-8 w-8" />,
+      description: "Blend ingredients with your unique goals and preferences",
+      ingredients: [
+        { name: "Custom Strategy", source: "tailored to your business", service: "Recommendation Service" },
+        { name: "Goal Alignment", source: "fits your objectives perfectly", service: "Recommendation Service" },
+        { name: "Smart Recommendations", source: "data-driven insights", service: "Recommendation Service" }
+      ],
+      color: "from-purple-500/10 to-purple-500/5 border-purple-200",
+      iconColor: "text-purple-600 bg-purple-100"
     },
     {
-      icon: <BarChart3 className="h-6 w-6" />,
-      title: "Performance Benchmarking",
-      description: "Compares your current state against industry standards and best practices to identify gaps and prioritize improvements."
-    }
-  ];
-
-  const dataUsagePoints = [
-    {
-      category: "Technology Assessment",
-      description: "Maps your current martech stack capabilities and integration points",
-      examples: ["CRM platforms", "Analytics tools", "Content management", "Automation platforms"]
+      step: "04",
+      title: "Continuous Learning",
+      subtitle: "Living Recipe Book",
+      icon: <Sparkles className="h-8 w-8" />,
+      description: "Strategies become smarter and more effective over time",
+      ingredients: [
+        { name: "Learning Engine", source: "from every interaction", service: "Knowledge & Retrieval Service" },
+        { name: "Smart Adaptation", source: "evolving recommendations", service: "Knowledge & Retrieval Service" },
+        { name: "Performance Tracking", source: "continuous improvement", service: "Knowledge & Retrieval Service" }
+      ],
+      color: "from-orange-500/10 to-orange-500/5 border-orange-200",
+      iconColor: "text-orange-600 bg-orange-100"
     },
     {
-      category: "Business Context",
-      description: "Understands your industry, company size, and strategic priorities",
-      examples: ["Revenue goals", "Target audiences", "Market position", "Growth objectives"]
+      step: "05",
+      title: "Elegant Presentation",
+      subtitle: "Beautiful Strategy Plating",
+      icon: <Palette className="h-8 w-8" />,
+      description: "Beautifully presented with intuitive dashboards and insights",
+      ingredients: [
+        { name: "Intuitive Dashboards", source: "clear navigation", service: "UX Design Service (Artist)" },
+        { name: "Insightful Charts", source: "visual data stories", service: "UX Design Service (Artist)" },
+        { name: "Easy Actions", source: "simple to understand and act on", service: "UX Design Service (Artist)" }
+      ],
+      color: "from-pink-500/10 to-pink-500/5 border-pink-200",
+      iconColor: "text-pink-600 bg-pink-100"
     },
     {
-      category: "Maturity Evaluation",
-      description: "Assesses current personalization and experimentation capabilities",
-      examples: ["Testing sophistication", "Data quality", "Team expertise", "Process maturity"]
-    },
-    {
-      category: "Strategic Alignment",
-      description: "Aligns recommendations with your specific business outcomes",
-      examples: ["ROI projections", "Resource requirements", "Timeline planning", "Risk assessment"]
+      step: "06",
+      title: "Future Brainstorming",
+      subtitle: "Chat with Your Chef",
+      icon: <MessageSquare className="h-8 w-8" />,
+      description: "Soon: Real-time conversation and strategy refinement",
+      ingredients: [
+        { name: "Natural Conversation", source: "chat interface", service: "Conversational Analytics Service (TTYD)" },
+        { name: "Idea Brainstorming", source: "collaborative strategy sessions", service: "Conversational Analytics Service (TTYD)" },
+        { name: "Real-time Refinement", source: "instant strategy adjustments", service: "Conversational Analytics Service (TTYD)" }
+      ],
+      color: "from-indigo-500/10 to-indigo-500/5 border-indigo-200",
+      iconColor: "text-indigo-600 bg-indigo-100",
+      comingSoon: true
     }
   ];
 
@@ -132,12 +117,12 @@ export default function HowItWorksPage() {
               </Link>
               <div>
                 <h1 className="text-2xl font-bold">How It Works</h1>
-                <p className="text-muted-foreground">Understanding the Opal AI Strategy Engine</p>
+                <p className="text-muted-foreground">Your Strategy, Served Fresh</p>
               </div>
             </div>
             <Link href="/engine">
               <Button className="gap-2">
-                Try the Engine
+                Try OSA Engine
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </Link>
@@ -147,136 +132,145 @@ export default function HowItWorksPage() {
 
       {/* Hero Section */}
       <section className="container mx-auto px-4 py-16 text-center">
-        <div className="max-w-4xl mx-auto space-y-8">
-          <div className="space-y-4">
-            <h2 className="text-4xl font-bold tracking-tight">
-              Intelligent Personalization Strategy Generation
+        <div className="max-w-6xl mx-auto space-y-8">
+          <div className="flex items-center justify-center mb-8">
+            <div className="relative w-full max-w-4xl">
+              <Image
+                src="/images/strategy-chef-hero.png"
+                alt="OSA Strategy Assistant - Customized Strategy Plans Tailored to Your Business Goals"
+                width={800}
+                height={600}
+                className="w-full h-auto rounded-lg shadow-lg"
+                priority
+              />
+            </div>
+          </div>
+          <div className="space-y-6">
+            <h2 className="text-5xl font-bold tracking-tight bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+              Your Personal Strategy Assistant
             </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Our AI engine analyzes your unique business context and technology ecosystem to create
-              data-driven personalization strategies that deliver measurable results.
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+              Imagine a world-class chef creating a custom meal plan tailored to your goals.
+              Here's how OSA creates your perfect strategy recipe.
             </p>
           </div>
         </div>
       </section>
 
-      {/* How the Engine Works */}
-      <section className="container mx-auto px-4 py-16">
-        <div className="text-center mb-12">
-          <h3 className="text-3xl font-bold mb-4">How the Opal Engine Works</h3>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Advanced AI technology meets personalization expertise to deliver strategies tailored to your organization
-          </p>
-        </div>
+      {/* Cooking Process Steps */}
+      <section className="container mx-auto px-4 py-12">
+        <div className="space-y-8">
+          {cookingSteps.map((step, index) => (
+            <div key={step.step} className="relative">
+              <Card className={`bg-gradient-to-br ${step.color} border hover:shadow-lg transition-all duration-300 ${step.comingSoon ? 'opacity-75' : ''}`}>
+                <CardContent className="p-6">
+                  <div className="text-center space-y-6">
+                    {/* Step Number and Icon */}
+                    <div className="flex justify-center">
+                      <div className="relative inline-block">
+                        <div className="text-6xl font-bold text-gray-200 absolute -top-2 -left-2">
+                          {step.step}
+                        </div>
+                        <div className={`relative z-10 p-4 rounded-2xl ${step.iconColor}`}>
+                          {step.icon}
+                        </div>
+                      </div>
+                    </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-          {engineCapabilities.map((capability, index) => (
-            <Card key={index} className="border-0 shadow-sm bg-white/60 backdrop-blur-sm hover:shadow-md transition-shadow">
-              <CardContent className="pt-6">
-                <div className="flex flex-col items-center text-center space-y-4">
-                  <div className="p-3 bg-primary/10 rounded-lg text-primary">
-                    {capability.icon}
-                  </div>
-                  <h3 className="font-semibold text-lg">{capability.title}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{capability.description}</p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* Data Usage Explanation */}
-        <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl flex items-center justify-center gap-3">
-              <Database className="h-7 w-7 text-blue-600" />
-              How We Use Your Data to Create Strategy
-            </CardTitle>
-            <p className="text-muted-foreground">
-              Transparency in how we analyze your information to generate personalized recommendations
-            </p>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {dataUsagePoints.map((point, index) => (
-                <div key={index} className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5 text-blue-600" />
-                    <h4 className="font-semibold text-gray-900">{point.category}</h4>
-                  </div>
-                  <p className="text-sm text-gray-600 ml-7">{point.description}</p>
-                  <div className="ml-7">
-                    <div className="flex flex-wrap gap-2">
-                      {point.examples.map((example, i) => (
-                        <span key={i} className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                          {example}
+                    {/* Coming Soon Badge */}
+                    {step.comingSoon && (
+                      <div>
+                        <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full font-medium">
+                          Coming Soon
                         </span>
+                      </div>
+                    )}
+
+                    {/* Content */}
+                    <div className="max-w-2xl mx-auto space-y-2">
+                      <h3 className="text-2xl font-bold">{step.title}</h3>
+                      <h4 className="text-lg text-muted-foreground font-medium">{step.subtitle}</h4>
+                      <p className="text-gray-600 leading-relaxed">{step.description}</p>
+                    </div>
+
+                    {/* Ingredients/Services - Centered Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
+                      {step.ingredients.map((ingredient, i) => (
+                        <div key={i} className="flex items-start gap-3 p-4 bg-white/60 rounded-lg backdrop-blur-sm">
+                          <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                          <div className="space-y-1 text-left">
+                            <div className="font-semibold text-sm text-gray-900">{ingredient.name}</div>
+                            <div className="text-xs text-gray-600">{ingredient.source}</div>
+                            <div className="text-xs text-blue-600 font-medium">{ingredient.service}</div>
+                          </div>
+                        </div>
                       ))}
                     </div>
                   </div>
+                </CardContent>
+              </Card>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Result Section */}
+      <section className="container mx-auto px-4 py-16">
+        <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 overflow-hidden">
+          <CardContent className="p-12 text-center">
+            <div className="max-w-4xl mx-auto space-y-8">
+              <div className="flex justify-center">
+                <div className="p-4 bg-green-100 rounded-full">
+                  <CheckCircle className="h-12 w-12 text-green-600" />
                 </div>
-              ))}
+              </div>
+
+              <h3 className="text-3xl font-bold text-green-900">
+                The Perfect Strategy Menu
+              </h3>
+
+              <p className="text-xl text-green-700 leading-relaxed max-w-3xl mx-auto">
+                A <strong>tailored, data-driven strategy</strong> that's expertly prepared, continuously improved,
+                and elegantly presented—just like a perfectly curated tasting menu for your business.
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
+                <div className="space-y-3">
+                  <div className="p-3 bg-green-100 rounded-lg inline-block">
+                    <Target className="h-6 w-6 text-green-600" />
+                  </div>
+                  <h4 className="font-semibold text-green-900">Expertly Prepared</h4>
+                  <p className="text-sm text-green-700">Data-driven insights tailored to your business</p>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="p-3 bg-green-100 rounded-lg inline-block">
+                    <Sparkles className="h-6 w-6 text-green-600" />
+                  </div>
+                  <h4 className="font-semibold text-green-900">Continuously Improved</h4>
+                  <p className="text-sm text-green-700">Learning engine that gets smarter over time</p>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="p-3 bg-green-100 rounded-lg inline-block">
+                    <Palette className="h-6 w-6 text-green-600" />
+                  </div>
+                  <h4 className="font-semibold text-green-900">Elegantly Presented</h4>
+                  <p className="text-sm text-green-700">Beautiful dashboards that are easy to understand</p>
+                </div>
+              </div>
+
+              <div className="pt-8">
+                <Link href="/engine">
+                  <Button size="lg" className="gap-2 bg-green-600 hover:bg-green-700 text-white px-8">
+                    Start Cooking Your Strategy
+                    <ChefHat className="h-5 w-5" />
+                  </Button>
+                </Link>
+              </div>
             </div>
           </CardContent>
         </Card>
-      </section>
-
-      {/* 4-Phase Maturity Framework */}
-      <section className="container mx-auto px-4 py-16 bg-white/50">
-        <div className="text-center mb-12">
-          <h3 className="text-3xl font-bold mb-4">4-Phase Maturity Framework</h3>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Our comprehensive framework guides you through progressive stages of personalization maturity,
-            ensuring sustainable growth and measurable results at each phase.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {maturityPhases.map((phase, index) => (
-            <Card key={phase.phase} className={`bg-gradient-to-br ${phase.color} border hover:shadow-lg transition-shadow h-full`}>
-              <CardContent className="p-6 h-full flex flex-col">
-                <div className="text-center mb-6">
-                  <div className="text-4xl mb-3">{phase.icon}</div>
-                  <h4 className="font-bold text-xl mb-2">{phase.phase.toUpperCase()}</h4>
-                  <h5 className="font-semibold text-sm text-muted-foreground mb-3">{phase.title}</h5>
-                  <p className="text-sm text-muted-foreground">{phase.description}</p>
-                </div>
-
-                <div className="flex-1">
-                  <h6 className="font-semibold text-sm mb-3">Key Capabilities:</h6>
-                  <div className="space-y-2">
-                    {phase.details.map((detail, i) => (
-                      <div key={i} className="flex items-start gap-2">
-                        <CheckCircle className="h-3 w-3 text-green-600 flex-shrink-0 mt-0.5" />
-                        <span className="text-xs leading-tight">{detail}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        <div className="text-center mt-12">
-          <Card className="inline-block bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3 mb-3">
-                <Zap className="h-6 w-6 text-purple-600" />
-                <span className="font-semibold text-lg">Ready to Begin Your Journey?</span>
-              </div>
-              <p className="text-sm text-muted-foreground mb-4">
-                Discover where you currently stand and get your personalized roadmap to the next phase
-              </p>
-              <Link href="/engine">
-                <Button size="lg" className="gap-2">
-                  Start Your Assessment
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        </div>
       </section>
 
       {/* Footer */}
@@ -284,7 +278,7 @@ export default function HowItWorksPage() {
         <div className="container mx-auto px-4 py-8">
           <div className="flex justify-between items-center">
             <div className="text-sm text-muted-foreground">
-              © 2025 Opal Personalization Generator from Perficient. Powered by Opal AI.
+              © 2025 OSA Strategy Assistant from Perficient. Your Personal Strategy Chef.
             </div>
             <div className="flex space-x-6">
               <Button variant="link" size="sm" asChild>

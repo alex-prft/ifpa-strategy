@@ -6,6 +6,7 @@ import { opalDataStore, OpalAgentResult } from '@/lib/opal/supabase-data-store';
 import { validateWebhookAuth, validateWebhookConfig } from '@/lib/security/webhook-auth';
 import { opalApiWithRetry, fetchWithRetry } from '@/lib/utils/retry';
 import { withCircuitBreaker, CircuitBreakerConfigs } from '@/lib/utils/circuit-breaker';
+import { webhookEventOperations } from '@/lib/database/webhook-events';
 
 interface OpalWebhookPayload {
   event_type: 'workflow.completed' | 'workflow.failed' | 'workflow.triggered' | 'agent.completed';
@@ -61,6 +62,9 @@ if (!webhookConfig.valid) {
 
 // POST: Receive webhook from Optimizely Opal
 export async function POST(request: NextRequest) {
+  const startTime = Date.now();
+  let webhookEventId: string | null = null;
+
   try {
     console.log('🔄 OPAL Workflow webhook received');
 
@@ -73,6 +77,20 @@ export async function POST(request: NextRequest) {
 
     if (!authToken) {
       console.error('❌ Webhook authentication not configured - OPAL_WEBHOOK_AUTH_KEY missing');
+
+      // Store failed webhook event
+      await webhookEventOperations.storeWebhookEvent({
+        event_type: 'webhook.authentication_error',
+        workflow_id: 'unknown',
+        received_at: new Date().toISOString(),
+        payload: { error: 'Missing auth token' },
+        success: false,
+        error_message: 'OPAL_WEBHOOK_AUTH_KEY missing',
+        processing_time_ms: Date.now() - startTime,
+        source_ip: request.ip || 'unknown',
+        user_agent: request.headers.get('user-agent') || undefined
+      });
+
       return NextResponse.json(
         {
           error: 'Webhook authentication not configured',
@@ -103,6 +121,19 @@ export async function POST(request: NextRequest) {
         ip: request.ip || 'unknown'
       });
 
+      // Store failed webhook event
+      await webhookEventOperations.storeWebhookEvent({
+        event_type: 'webhook.authentication_failed',
+        workflow_id: 'unknown',
+        received_at: new Date().toISOString(),
+        payload: { error: authResult.error },
+        success: false,
+        error_message: authResult.error,
+        processing_time_ms: Date.now() - startTime,
+        source_ip: request.ip || 'unknown',
+        user_agent: request.headers.get('user-agent') || undefined
+      });
+
       return NextResponse.json(
         {
           error: 'Authentication failed',
@@ -122,6 +153,20 @@ export async function POST(request: NextRequest) {
       payload = JSON.parse(body);
     } catch (error) {
       console.error('Invalid JSON payload:', error);
+
+      // Store failed webhook event
+      await webhookEventOperations.storeWebhookEvent({
+        event_type: 'webhook.parse_error',
+        workflow_id: 'unknown',
+        received_at: new Date().toISOString(),
+        payload: { raw_body: body },
+        success: false,
+        error_message: error instanceof Error ? error.message : 'JSON parse failed',
+        processing_time_ms: Date.now() - startTime,
+        source_ip: request.ip || 'unknown',
+        user_agent: request.headers.get('user-agent') || undefined
+      });
+
       return NextResponse.json(
         { error: 'Invalid JSON payload' },
         { status: 400 }
@@ -135,40 +180,86 @@ export async function POST(request: NextRequest) {
       trigger_source: payload.trigger_source
     });
 
+    // Store successful webhook event reception
+    webhookEventId = await webhookEventOperations.storeWebhookEvent({
+      event_type: payload.event_type,
+      workflow_id: payload.workflow_id,
+      workflow_name: payload.workflow_name,
+      agent_id: payload.agent_id,
+      agent_name: payload.agent_name,
+      session_id: payload.metadata?.session_id,
+      received_at: payload.timestamp,
+      payload: payload,
+      success: true,
+      processing_time_ms: Date.now() - startTime,
+      source_ip: request.ip || 'unknown',
+      user_agent: request.headers.get('user-agent') || undefined
+    });
+
     // Initialize Opal Agent Client
     const opalClient = new OPALAgentClient();
 
     // Process different event types
     switch (payload.event_type) {
       case 'workflow.completed':
-        await handleWorkflowCompleted(payload, opalClient);
+        await handleWorkflowCompleted(payload, opalClient, webhookEventId);
         break;
 
       case 'workflow.failed':
-        await handleWorkflowFailed(payload, opalClient);
+        await handleWorkflowFailed(payload, opalClient, webhookEventId);
         break;
 
       case 'workflow.triggered':
-        await handleWorkflowTriggered(payload, opalClient);
+        await handleWorkflowTriggered(payload, opalClient, webhookEventId);
         break;
 
       case 'agent.completed':
-        await handleAgentCompleted(payload, opalClient);
+        await handleAgentCompleted(payload, opalClient, webhookEventId);
         break;
 
       default:
         console.log(`Unhandled event type: ${payload.event_type}`);
+        // Update webhook event with warning about unhandled event type
+        await webhookEventOperations.storeWebhookEvent({
+          event_type: `${payload.event_type}.unhandled`,
+          workflow_id: payload.workflow_id,
+          workflow_name: payload.workflow_name,
+          received_at: new Date().toISOString(),
+          payload: payload,
+          success: true,
+          error_message: `Unhandled event type: ${payload.event_type}`,
+          processing_time_ms: Date.now() - startTime,
+          source_ip: request.ip || 'unknown',
+          user_agent: request.headers.get('user-agent') || undefined
+        });
     }
 
     return NextResponse.json({
       success: true,
       message: `Processed ${payload.event_type} event`,
       workflow_id: payload.workflow_id,
+      webhook_event_id: webhookEventId,
       timestamp: new Date().toISOString()
     });
 
   } catch (error) {
     console.error('Opal Workflow webhook error:', error);
+
+    // Store failed webhook event if we have enough info
+    if (webhookEventId) {
+      await webhookEventOperations.storeWebhookEvent({
+        event_type: 'webhook.processing_error',
+        workflow_id: 'unknown',
+        received_at: new Date().toISOString(),
+        payload: { error: error instanceof Error ? error.message : 'Unknown error' },
+        success: false,
+        error_message: error instanceof Error ? error.message : 'Unknown error',
+        processing_time_ms: Date.now() - startTime,
+        source_ip: request.ip || 'unknown',
+        user_agent: request.headers.get('user-agent') || undefined
+      });
+    }
+
     return NextResponse.json(
       {
         error: 'Internal server error',
@@ -227,7 +318,7 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-async function handleWorkflowCompleted(payload: OpalWebhookPayload, opalClient: OPALAgentClient) {
+async function handleWorkflowCompleted(payload: OpalWebhookPayload, opalClient: OPALAgentClient, webhookEventId?: string) {
   console.log(`Workflow completed: ${payload.workflow_name} (${payload.workflow_id})`);
 
   try {
@@ -257,6 +348,17 @@ async function handleWorkflowCompleted(payload: OpalWebhookPayload, opalClient: 
         });
       } catch (notificationError) {
         console.error('Failed to send workflow completion notification:', notificationError);
+
+        // Log notification failure as separate event
+        await webhookEventOperations.storeWebhookEvent({
+          event_type: 'workflow.notification_failed',
+          workflow_id: payload.workflow_id,
+          workflow_name: payload.workflow_name,
+          received_at: new Date().toISOString(),
+          payload: { notification_error: notificationError instanceof Error ? notificationError.message : 'Unknown error' },
+          success: false,
+          error_message: `Notification failed: ${notificationError instanceof Error ? notificationError.message : 'Unknown error'}`
+        });
       }
     }
 
@@ -273,15 +375,36 @@ async function handleWorkflowCompleted(payload: OpalWebhookPayload, opalClient: 
       if (completedAgents.length > 0) {
         console.log(`${completedAgents.length} agents completed successfully!`);
         // The user could be redirected to results at this point if we implement SSE or WebSocket notifications
+
+        // Log successful completion processing
+        await webhookEventOperations.storeWebhookEvent({
+          event_type: 'workflow.completion_processed',
+          workflow_id: payload.workflow_id,
+          workflow_name: payload.workflow_name,
+          received_at: new Date().toISOString(),
+          payload: { completed_agents: completedAgents.length, agent_list: completedAgents },
+          success: true
+        });
       }
     }
 
   } catch (error) {
     console.error('Error handling workflow completion:', error);
+
+    // Log processing error
+    await webhookEventOperations.storeWebhookEvent({
+      event_type: 'workflow.completion_error',
+      workflow_id: payload.workflow_id,
+      workflow_name: payload.workflow_name,
+      received_at: new Date().toISOString(),
+      payload: { error: error instanceof Error ? error.message : 'Unknown error' },
+      success: false,
+      error_message: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 }
 
-async function handleWorkflowFailed(payload: OpalWebhookPayload, opalClient: OPALAgentClient) {
+async function handleWorkflowFailed(payload: OpalWebhookPayload, opalClient: OPALAgentClient, webhookEventId?: string) {
   console.error(`Workflow failed: ${payload.workflow_name} (${payload.workflow_id})`);
 
   try {
@@ -299,6 +422,16 @@ async function handleWorkflowFailed(payload: OpalWebhookPayload, opalClient: OPA
 
     console.error('Workflow failure details:', failureData);
 
+    // Store detailed failure event
+    await webhookEventOperations.storeWebhookEvent({
+      event_type: 'workflow.failure_processed',
+      workflow_id: payload.workflow_id,
+      workflow_name: payload.workflow_name,
+      received_at: new Date().toISOString(),
+      payload: failureData,
+      success: true // Successfully processed the failure event
+    });
+
     // Send failure notification
     if (payload.metadata?.client_id) {
       try {
@@ -309,16 +442,48 @@ async function handleWorkflowFailed(payload: OpalWebhookPayload, opalClient: OPA
           plan_summary: `The workflow "${payload.workflow_name}" has failed. Please check the logs for details and try again.`,
           sender_name: 'Opal System'
         });
+
+        // Log successful notification
+        await webhookEventOperations.storeWebhookEvent({
+          event_type: 'workflow.failure_notification_sent',
+          workflow_id: payload.workflow_id,
+          workflow_name: payload.workflow_name,
+          received_at: new Date().toISOString(),
+          payload: { notification_sent: true },
+          success: true
+        });
       } catch (notificationError) {
         console.error('Failed to send workflow failure notification:', notificationError);
+
+        // Log notification failure
+        await webhookEventOperations.storeWebhookEvent({
+          event_type: 'workflow.failure_notification_failed',
+          workflow_id: payload.workflow_id,
+          workflow_name: payload.workflow_name,
+          received_at: new Date().toISOString(),
+          payload: { notification_error: notificationError instanceof Error ? notificationError.message : 'Unknown error' },
+          success: false,
+          error_message: `Notification failed: ${notificationError instanceof Error ? notificationError.message : 'Unknown error'}`
+        });
       }
     }
   } catch (error) {
     console.error('Error handling workflow failure:', error);
+
+    // Log processing error
+    await webhookEventOperations.storeWebhookEvent({
+      event_type: 'workflow.failure_processing_error',
+      workflow_id: payload.workflow_id,
+      workflow_name: payload.workflow_name,
+      received_at: new Date().toISOString(),
+      payload: { error: error instanceof Error ? error.message : 'Unknown error' },
+      success: false,
+      error_message: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 }
 
-async function handleWorkflowTriggered(payload: OpalWebhookPayload, opalClient: OPALAgentClient) {
+async function handleWorkflowTriggered(payload: OpalWebhookPayload, opalClient: OPALAgentClient, webhookEventId?: string) {
   console.log(`Workflow triggered: ${payload.workflow_name} (${payload.workflow_id})`);
 
   try {
@@ -336,22 +501,65 @@ async function handleWorkflowTriggered(payload: OpalWebhookPayload, opalClient: 
 
     console.log('Workflow trigger event:', triggerData);
 
+    // Store trigger processing event
+    await webhookEventOperations.storeWebhookEvent({
+      event_type: 'workflow.trigger_processed',
+      workflow_id: payload.workflow_id,
+      workflow_name: payload.workflow_name,
+      received_at: new Date().toISOString(),
+      payload: triggerData,
+      success: true
+    });
+
     // Optionally pull initial data or set up monitoring
     if (payload.trigger_source === 'schedule') {
       console.log('Scheduled workflow triggered, setting up monitoring...');
+
+      // Log scheduled trigger
+      await webhookEventOperations.storeWebhookEvent({
+        event_type: 'workflow.scheduled_trigger',
+        workflow_id: payload.workflow_id,
+        workflow_name: payload.workflow_name,
+        received_at: new Date().toISOString(),
+        payload: { trigger_source: 'schedule', monitoring_setup: true },
+        success: true
+      });
     }
   } catch (error) {
     console.error('Error handling workflow trigger:', error);
+
+    // Log processing error
+    await webhookEventOperations.storeWebhookEvent({
+      event_type: 'workflow.trigger_processing_error',
+      workflow_id: payload.workflow_id,
+      workflow_name: payload.workflow_name,
+      received_at: new Date().toISOString(),
+      payload: { error: error instanceof Error ? error.message : 'Unknown error' },
+      success: false,
+      error_message: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 }
 
-async function handleAgentCompleted(payload: OpalWebhookPayload, opalClient: OPALAgentClient) {
+async function handleAgentCompleted(payload: OpalWebhookPayload, opalClient: OPALAgentClient, webhookEventId?: string) {
   console.log(`Agent completed: ${payload.agent_name} (${payload.agent_id}) for workflow ${payload.workflow_id}`);
 
   try {
     // Validate required agent fields
     if (!payload.agent_id || !payload.agent_name) {
       console.error('Invalid agent completion payload: missing agent_id or agent_name');
+
+      // Log validation error
+      await webhookEventOperations.storeWebhookEvent({
+        event_type: 'agent.validation_error',
+        workflow_id: payload.workflow_id,
+        agent_id: payload.agent_id,
+        agent_name: payload.agent_name,
+        received_at: new Date().toISOString(),
+        payload: { validation_error: 'missing agent_id or agent_name' },
+        success: false,
+        error_message: 'Invalid agent completion payload: missing agent_id or agent_name'
+      });
       return;
     }
 
@@ -376,6 +584,20 @@ async function handleAgentCompleted(payload: OpalWebhookPayload, opalClient: OPA
       success: agentResult.success
     });
 
+    // Store agent completion processing event
+    await webhookEventOperations.storeWebhookEvent({
+      event_type: 'agent.completion_processed',
+      workflow_id: payload.workflow_id,
+      agent_id: payload.agent_id,
+      agent_name: payload.agent_name,
+      received_at: new Date().toISOString(),
+      payload: {
+        agent_result: agentResult,
+        processing_success: true
+      },
+      success: true
+    });
+
     // Check if agents have completed
     const workflow = opalDataStore.getWorkflow(payload.workflow_id);
     if (workflow) {
@@ -386,6 +608,21 @@ async function handleAgentCompleted(payload: OpalWebhookPayload, opalClient: OPA
         completed: completedAgents.length,
         completedAgents,
         latestAgent: payload.agent_name
+      });
+
+      // Store progress update
+      await webhookEventOperations.storeWebhookEvent({
+        event_type: 'agent.progress_update',
+        workflow_id: payload.workflow_id,
+        agent_id: payload.agent_id,
+        agent_name: payload.agent_name,
+        received_at: new Date().toISOString(),
+        payload: {
+          completed_agents_count: completedAgents.length,
+          completed_agents: completedAgents,
+          latest_agent: payload.agent_name
+        },
+        success: true
       });
 
       // For now, just log completion progress
@@ -399,6 +636,18 @@ async function handleAgentCompleted(payload: OpalWebhookPayload, opalClient: OPA
 
   } catch (error) {
     console.error('Error handling agent completion:', error);
+
+    // Log processing error
+    await webhookEventOperations.storeWebhookEvent({
+      event_type: 'agent.completion_processing_error',
+      workflow_id: payload.workflow_id,
+      agent_id: payload.agent_id,
+      agent_name: payload.agent_name,
+      received_at: new Date().toISOString(),
+      payload: { error: error instanceof Error ? error.message : 'Unknown error' },
+      success: false,
+      error_message: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 }
 

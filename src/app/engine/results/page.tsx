@@ -3,18 +3,6 @@
 import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { DateRangePicker } from '@/components/DateRangePicker';
-import ModernMaturityPlanDisplay from '@/components/ModernMaturityPlanDisplay';
-import MaturityAnalyticsDashboard from '@/components/MaturityAnalyticsDashboard';
-import EnhancedAnalyticsDashboard from '@/components/EnhancedAnalyticsDashboard';
-import ABTestBlueprintGenerator from '@/components/ABTestBlueprintGenerator';
-import AudienceSyncRecommendations from '@/components/AudienceSyncRecommendations';
-import ContentPerformanceScoring from '@/components/ContentPerformanceScoring';
-import AEOAuditDashboard from '@/components/AEOAuditDashboard';
-import AIExperimentationRecommendations from '@/components/AIExperimentationRecommendations';
-import AIPersonalizationRecommendations from '@/components/AIPersonalizationRecommendations';
-import DataInsightsDashboard from '@/components/DataInsightsDashboard';
 import LoadingResultsPage from '@/components/LoadingResultsPage';
 import PasswordProtection from '@/components/PasswordProtection';
 import StrategyDashboard from '@/components/StrategyDashboard';
@@ -34,18 +22,19 @@ function ResultsPageContent() {
   const [workflowResult, setWorkflowResult] = useState<OSAWorkflowOutput | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [dateRange, setDateRange] = useState({
-    from: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000),
-    to: new Date()
-  });
+  const [skipAuth, setSkipAuth] = useState(false);
 
   // Initialize service error listener
   useServiceErrorListener();
 
   useEffect(() => {
+    // Check for skipAuth parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const shouldSkipAuth = urlParams.get('skipAuth') === 'true';
+    setSkipAuth(shouldSkipAuth);
+
     // Try to get results from sessionStorage or URL params
-    const searchParams = new URLSearchParams(window.location.search);
-    const resultId = searchParams.get('id');
+    const resultId = urlParams.get('id');
 
     if (resultId) {
       // In a real app, you'd fetch the result by ID from your API
@@ -77,7 +66,7 @@ function ResultsPageContent() {
     setIsAuthenticated(true);
   };
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated && !skipAuth) {
     return (
       <PasswordProtection onAuthenticated={handleAuthenticated}>
         <div />

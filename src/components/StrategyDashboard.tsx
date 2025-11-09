@@ -1,6 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+
+// Speech Recognition API declarations
+declare global {
+  interface Window {
+    webkitSpeechRecognition: any;
+    SpeechRecognition: any;
+  }
+}
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,15 +32,18 @@ import {
   RefreshCw,
   Filter,
   ArrowRight,
+  ArrowLeft,
   Clock,
   AlertCircle,
   CheckCircle,
+  CheckCircle2,
   Users,
   BookOpen,
   Eye,
   Zap,
   Database,
   MessageSquare,
+  Mic,
   Lightbulb,
   Palette,
   Calendar,
@@ -151,6 +162,54 @@ const userRoles = [
   { id: 'developer', label: 'Developer' }
 ];
 
+// Agent status type
+type AgentStatus = 'default' | 'active' | 'error';
+
+// Mock agent status function - in production this would connect to real agent monitoring
+function getAgentStatus(agentId: string): AgentStatus {
+  // Simulate different states for demonstration
+  const statusMap: Record<string, AgentStatus> = {
+    'roadmap_generator': 'active',
+    'integration_health': 'active',
+    'personalization_idea_generator': 'default',
+    'cmp_organizer': 'error',
+    'experiment_blueprinter': 'active',
+    'customer_journey': 'default',
+    'audience_suggester': 'default',
+    'geo_audit': 'error',
+    'content_review': 'active'
+  };
+
+  return statusMap[agentId] || 'default';
+}
+
+// Agent Status Bubble Component
+interface AgentStatusBubbleProps {
+  agentId: string;
+  agentName: string;
+  status: AgentStatus;
+}
+
+function AgentStatusBubble({ agentId, agentName, status }: AgentStatusBubbleProps) {
+  const getStatusColor = (status: AgentStatus) => {
+    switch (status) {
+      case 'active':
+        return 'bg-green-500';
+      case 'error':
+        return 'bg-red-500';
+      default:
+        return 'bg-gray-400';
+    }
+  };
+
+  return (
+    <div
+      className={`w-3 h-3 rounded-full ${getStatusColor(status)} cursor-pointer hover:scale-110 transition-transform`}
+      title={agentName}
+    />
+  );
+}
+
 export default function StrategyDashboard({ workflowResult }: StrategyDashboardProps) {
   const [activeArea, setActiveArea] = useState('strategy-plans');
   const [activeTab, setActiveTab] = useState('osa');
@@ -159,6 +218,14 @@ export default function StrategyDashboard({ workflowResult }: StrategyDashboardP
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [syncProgress, setSyncProgress] = useState(85);
   const [isFilterExpanded, setIsFilterExpanded] = useState(false);
+  const [showTTYD, setShowTTYD] = useState(true);
+
+  // Webhook status tracking states
+  const [lastWebhookReceived, setLastWebhookReceived] = useState<Date | null>(null);
+  const [webhookStatus, setWebhookStatus] = useState<'connected' | 'disconnected' | 'error'>('connected');
+  const [workflowStatus, setWorkflowStatus] = useState<'success' | 'failed' | 'pending' | null>('success');
+  const [dataFreshness, setDataFreshness] = useState<'fresh' | 'stale' | 'old'>('fresh');
+  const [ttydQuestion, setTtydQuestion] = useState('');
 
   // Initialize analytics and recommendation systems
   const analytics = useAnalytics({
@@ -252,6 +319,34 @@ export default function StrategyDashboard({ workflowResult }: StrategyDashboardP
     analytics.trackTabChange(activeArea, previousTab, tabId);
   };
 
+  // Helper functions for webhook status
+  const getDataFreshnessColor = (freshness: 'fresh' | 'stale' | 'old') => {
+    switch (freshness) {
+      case 'fresh': return 'text-green-600';
+      case 'stale': return 'text-yellow-600';
+      case 'old': return 'text-red-600';
+    }
+  };
+
+  const getWorkflowStatusIcon = (status: 'success' | 'failed' | 'pending' | null) => {
+    switch (status) {
+      case 'success': return '✓';
+      case 'failed': return '✗';
+      case 'pending': return '⏳';
+      default: return '—';
+    }
+  };
+
+  const calculateDataFreshness = (lastReceived: Date | null): 'fresh' | 'stale' | 'old' => {
+    if (!lastReceived) return 'old';
+    const now = new Date();
+    const hoursSince = (now.getTime() - lastReceived.getTime()) / (1000 * 60 * 60);
+
+    if (hoursSince < 1) return 'fresh';
+    if (hoursSince < 24) return 'stale';
+    return 'old';
+  };
+
   const currentArea = navigationAreas.find(area => area.id === activeArea);
 
   return (
@@ -271,25 +366,122 @@ export default function StrategyDashboard({ workflowResult }: StrategyDashboardP
               </div>
             </div>
 
-            {/* Recent sync indicator */}
-            <div id="sync-status" className="bg-slate-50 rounded-lg p-3">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <Activity className="h-4 w-4 text-green-600" />
-                  <span className="text-sm font-medium text-green-800">Recent Data</span>
-                </div>
-                <span className="text-xs text-muted-foreground">
-                  {lastUpdated.toLocaleDateString()} {lastUpdated.toLocaleTimeString()}
-                </span>
+            {/* Recent Data Accordion */}
+            <Accordion type="single" collapsible defaultValue="recent-data" className="bg-slate-50 rounded-lg">
+              <AccordionItem value="recent-data" className="border-none">
+                <AccordionTrigger className="p-3 pb-2 hover:no-underline">
+                  <div className="flex items-center justify-between w-full">
+                    <div className="flex items-center gap-2">
+                      <Activity className={`h-4 w-4 ${
+                        webhookStatus === 'connected' ? 'text-green-600' :
+                        webhookStatus === 'error' ? 'text-red-600' : 'text-yellow-600'
+                      }`} />
+                      <span className="text-sm font-medium text-gray-800">Recent Data</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mr-4">
+                      <span className={getDataFreshnessColor(calculateDataFreshness(lastWebhookReceived))}>
+                        {calculateDataFreshness(lastWebhookReceived) === 'fresh' ? '●' :
+                         calculateDataFreshness(lastWebhookReceived) === 'stale' ? '◐' : '○'}
+                      </span>
+                    </div>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-3 pb-3">
+                  <div className="space-y-3">
+                    {/* OPAL Workflow Status */}
+                    <div className="flex items-center gap-2 text-xs">
+                      <span>Opal Workflow:</span>
+                      {/* Workflow time - show current time or last webhook time */}
+                      <span className="text-muted-foreground">
+                        {lastWebhookReceived
+                          ? `${lastWebhookReceived.toLocaleDateString()} ${lastWebhookReceived.toLocaleTimeString()}`
+                          : `${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`
+                        }
+                      </span>
+                      {workflowStatus === 'success' ? (
+                        <CheckCircle2 className="h-3 w-3 text-green-600" />
+                      ) : workflowStatus === 'failed' ? (
+                        <X className="h-3 w-3 text-red-600" />
+                      ) : workflowStatus === 'pending' ? (
+                        <Clock className="h-3 w-3 text-yellow-600 animate-pulse" />
+                      ) : (
+                        <AlertCircle className="h-3 w-3 text-gray-400" />
+                      )}
+                    </div>
+
+                    {/* Agent Status Bubbles */}
+                    <div>
+                      <div className="text-xs text-muted-foreground mb-1">OPAL Agents:</div>
+                      <div className="flex items-center gap-1.5">
+                        <AgentStatusBubble
+                          agentId="roadmap_generator"
+                          agentName="Roadmap Generator"
+                          status={getAgentStatus('roadmap_generator')}
+                        />
+                        <AgentStatusBubble
+                          agentId="integration_health"
+                          agentName="Integration Health"
+                          status={getAgentStatus('integration_health')}
+                        />
+                        <AgentStatusBubble
+                          agentId="personalization_idea_generator"
+                          agentName="Personalization Idea Generator"
+                          status={getAgentStatus('personalization_idea_generator')}
+                        />
+                        <AgentStatusBubble
+                          agentId="cmp_organizer"
+                          agentName="CMP Organizer"
+                          status={getAgentStatus('cmp_organizer')}
+                        />
+                        <AgentStatusBubble
+                          agentId="experiment_blueprinter"
+                          agentName="Experiment Blueprinter"
+                          status={getAgentStatus('experiment_blueprinter')}
+                        />
+                        <AgentStatusBubble
+                          agentId="customer_journey"
+                          agentName="Customer Journey"
+                          status={getAgentStatus('customer_journey')}
+                        />
+                        <AgentStatusBubble
+                          agentId="audience_suggester"
+                          agentName="Audience Suggester"
+                          status={getAgentStatus('audience_suggester')}
+                        />
+                        <AgentStatusBubble
+                          agentId="geo_audit"
+                          agentName="Geo Audit"
+                          status={getAgentStatus('geo_audit')}
+                        />
+                        <AgentStatusBubble
+                          agentId="content_review"
+                          agentName="Content Review"
+                          status={getAgentStatus('content_review')}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          </div>
+
+          {/* TTYD (Talk To Your Data) Link */}
+          <div className="p-4 border-b border-gray-200">
+            <button
+              className="w-full flex items-center gap-3 p-3 rounded-lg transition-all text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200"
+              onClick={() => {
+                console.log('Navigate to TTYD (Talk To Your Data)');
+                setShowTTYD(true);
+              }}
+            >
+              <MessageSquare className="h-5 w-5" />
+              <div className="flex-1 text-left">
+                <div className="font-medium">Talk To Your Data</div>
+                <div className="text-xs text-blue-600">Interactive data exploration</div>
               </div>
-              <div className="space-y-1">
-                <div className="flex justify-between text-xs">
-                  <span>Sync Status</span>
-                  <span>{syncProgress}%</span>
-                </div>
-                <Progress value={syncProgress} className="h-1" />
-              </div>
-            </div>
+              <ExternalLink className="h-4 w-4" />
+            </button>
           </div>
 
           {/* Navigation Areas */}
@@ -300,7 +492,7 @@ export default function StrategyDashboard({ workflowResult }: StrategyDashboardP
             <nav className="space-y-2">
               {navigationAreas.map((area) => {
                 const Icon = area.icon;
-                const isActive = activeArea === area.id;
+                const isActive = activeArea === area.id && !showTTYD;
 
                 return (
                   <button
@@ -509,67 +701,79 @@ export default function StrategyDashboard({ workflowResult }: StrategyDashboardP
 
         {/* Main Content */}
         <div id="main-content" className="flex-1">
-          {/* Header with Tabs */}
-          <div id="main-header" className="bg-white border-b shadow-sm sticky top-0 z-40">
-            <div className="px-6 py-4">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900">{currentArea?.title}</h1>
+          {/* Header with Tabs - Hidden when TTYD is active */}
+          {!showTTYD && (
+            <div id="main-header" className="bg-white border-b shadow-sm sticky top-0 z-40">
+              <div className="px-6 py-4">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h1 className="text-2xl font-bold text-gray-900">{currentArea?.title}</h1>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <Button variant="outline" size="sm" className="gap-2">
+                      <RefreshCw className="h-4 w-4" />
+                      Refresh
+                    </Button>
+                    <Button variant="outline" size="sm" className="gap-2">
+                      <ExternalLink className="h-4 w-4" />
+                      Export
+                    </Button>
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <RefreshCw className="h-4 w-4" />
-                    Refresh
-                  </Button>
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <ExternalLink className="h-4 w-4" />
-                    Export
-                  </Button>
-                </div>
+                {/* Tabs */}
+                {currentArea && (
+                  <Tabs id="main-tabs" value={activeTab} onValueChange={handleTabChange}>
+                    <TabsList className="grid w-full grid-cols-5 lg:grid-cols-5 h-auto p-1 bg-gray-100">
+                      {currentArea.tabs.map((tab) => (
+                        <TabsTrigger
+                          key={tab.id}
+                          value={tab.id}
+                          className="text-sm font-medium data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm"
+                        >
+                          {tab.title}
+                        </TabsTrigger>
+                      ))}
+                    </TabsList>
+                  </Tabs>
+                )}
               </div>
-
-              {/* Tabs */}
-              {currentArea && (
-                <Tabs id="main-tabs" value={activeTab} onValueChange={handleTabChange}>
-                  <TabsList className="grid w-full grid-cols-5 lg:grid-cols-5 h-auto p-1 bg-gray-100">
-                    {currentArea.tabs.map((tab) => (
-                      <TabsTrigger
-                        key={tab.id}
-                        value={tab.id}
-                        className="text-sm font-medium data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm"
-                      >
-                        {tab.title}
-                      </TabsTrigger>
-                    ))}
-                  </TabsList>
-                </Tabs>
-              )}
             </div>
-          </div>
+          )}
 
 
           {/* Content Area */}
           <div id="content-area" className="p-6">
-            <ActionTabContent
-              areaId={activeArea}
-              tabId={activeTab}
-              actionTabId={activeActionTab}
-              selectedRole={selectedRole}
-              workflowResult={workflowResult}
-              recommendations={recommendations}
-              analytics={analytics}
-            />
+            {showTTYD ? (
+              <TTYDContent
+                question={ttydQuestion}
+                onQuestionChange={setTtydQuestion}
+                onClose={() => setShowTTYD(false)}
+              />
+            ) : (
+              <>
+                <ActionTabContent
+                  areaId={activeArea}
+                  tabId={activeTab}
+                  actionTabId={activeActionTab}
+                  selectedRole={selectedRole}
+                  workflowResult={workflowResult}
+                  recommendations={recommendations}
+                  analytics={analytics}
+                />
 
-            {/* Engine Actions and Summary */}
-            <EngineActionsSummary
-              areaId={activeArea}
-              tabId={activeTab}
-              actionTabId={activeActionTab}
-            />
+                {/* Engine Actions and Summary */}
+                <EngineActionsSummary
+                  areaId={activeArea}
+                  tabId={activeTab}
+                  actionTabId={activeActionTab}
+                />
 
-            {/* Results Footer */}
-            <ResultsFooter />
+                {/* Results Footer */}
+                <ResultsFooter />
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -13884,6 +14088,260 @@ function ResultsFooter() {
         <div className="flex items-center gap-2 text-xs">
           <Clock className="h-3 w-3" />
           <span>Generated: {new Date().toLocaleDateString()} at {new Date().toLocaleTimeString()}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// TTYD Content Component
+interface TTYDContentProps {
+  question: string;
+  onQuestionChange: (question: string) => void;
+  onClose: () => void;
+}
+
+function TTYDContent({ question, onQuestionChange, onClose }: TTYDContentProps) {
+  const [isListening, setIsListening] = useState(false);
+
+  const handlePrebuiltPrompt = (prompt: string) => {
+    onQuestionChange(prompt);
+  };
+
+  const handleQuestionSubmit = () => {
+    if (!question.trim()) return;
+    console.log('TTYD: Processing question:', question);
+    // TODO: Implement actual question processing
+  };
+
+  const handleVoiceActivation = () => {
+    if (!isListening) {
+      // Start voice recognition
+      if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = 'en-US';
+
+        recognition.onstart = () => {
+          setIsListening(true);
+        };
+
+        recognition.onresult = (event) => {
+          const transcript = event.results[0][0].transcript;
+          onQuestionChange(question + (question ? ' ' : '') + transcript);
+        };
+
+        recognition.onend = () => {
+          setIsListening(false);
+        };
+
+        recognition.onerror = (event) => {
+          console.error('Speech recognition error:', event.error);
+          setIsListening(false);
+        };
+
+        recognition.start();
+      } else {
+        alert('Speech recognition is not supported in your browser. Please try using Chrome, Safari, or Edge.');
+      }
+    } else {
+      // Stop listening (this will be handled by recognition.onend)
+      setIsListening(false);
+    }
+  };
+
+  const prebuiltPrompts = [
+    {
+      category: "Content",
+      icon: BookOpen,
+      color: "bg-blue-500",
+      prompt: "What are the key content optimization opportunities based on my Optimizely data?"
+    },
+    {
+      category: "Audiences",
+      icon: Users,
+      color: "bg-green-500",
+      prompt: "Which audience segments show the highest engagement and conversion potential in my data?"
+    },
+    {
+      category: "Quick Wins",
+      icon: Zap,
+      color: "bg-purple-500",
+      prompt: "What are the top 3 quick wins I can implement this week based on my Optimizely results?"
+    }
+  ];
+
+  const didYouKnowInsights = [
+    {
+      icon: TrendingUp,
+      title: "Personalization Impact",
+      insight: "Your personalized experiences show 23% higher conversion rates than non-personalized variants"
+    },
+    {
+      icon: Target,
+      title: "Top Performing Audience",
+      insight: "Mobile users from the 'Returning Customers' segment have the highest engagement scores"
+    },
+    {
+      icon: BarChart3,
+      title: "Content Performance",
+      insight: "Product recommendation blocks drive 40% more clicks than static content areas"
+    },
+    {
+      icon: Users,
+      title: "Audience Insights",
+      insight: "Your 'Premium Tier' audience segment shows 60% higher lifetime value"
+    },
+    {
+      icon: Sparkles,
+      title: "A/B Test Results",
+      insight: "Tests with 3+ variants consistently outperform simple A/B tests by 15%"
+    },
+    {
+      icon: Activity,
+      title: "Engagement Patterns",
+      insight: "Users engage most with your content between 2-4 PM on weekdays"
+    },
+    {
+      icon: Globe,
+      title: "Geographic Performance",
+      insight: "West Coast traffic converts 18% better with social proof elements"
+    }
+  ];
+
+  return (
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+            <MessageSquare className="h-8 w-8 text-blue-600" />
+            Talk To Your Data
+          </h1>
+          <p className="text-lg text-gray-600 mt-2">
+            Ask questions about your Optimizely data and get AI-powered insights
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          onClick={onClose}
+          className="gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Dashboard
+        </Button>
+      </div>
+
+      {/* Main Question Input */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Sparkles className="h-5 w-5 text-purple-600" />
+            <span>Ask Your Question</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <textarea
+              placeholder="Ask me questions about your Optimizely data..."
+              value={question}
+              onChange={(e) => onQuestionChange(e.target.value)}
+              className="w-full min-h-[120px] p-4 text-lg border rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <Button
+                onClick={handleVoiceActivation}
+                variant="ghost"
+                size="sm"
+                className={`h-8 w-8 p-0 rounded-full transition-all ${
+                  isListening
+                    ? 'bg-red-500 text-white hover:bg-red-600 animate-pulse'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+                title={isListening ? 'Stop listening' : 'Voice input'}
+              >
+                <Mic className={`h-4 w-4 ${isListening ? 'animate-pulse' : ''}`} />
+              </Button>
+              <div className="text-sm text-gray-500">
+                {isListening ? (
+                  <span className="flex items-center gap-2 text-red-600">
+                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                    Listening... Speak now
+                  </span>
+                ) : (
+                  <span>Click the microphone to use voice input</span>
+                )}
+              </div>
+            </div>
+            <Button
+              onClick={handleQuestionSubmit}
+              disabled={!question.trim()}
+              className="bg-blue-600 hover:bg-blue-700 gap-2"
+            >
+              <MessageSquare className="h-4 w-4" />
+              Ask Question
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Prebuilt Prompts */}
+      <div>
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">Popular Questions</h2>
+        <div className="grid md:grid-cols-3 gap-4">
+          {prebuiltPrompts.map((prompt, index) => (
+            <Card
+              key={index}
+              className="cursor-pointer hover:shadow-lg transition-shadow border-2 hover:border-gray-300"
+              onClick={() => handlePrebuiltPrompt(prompt.prompt)}
+            >
+              <CardContent className="p-6">
+                <div className="flex items-start space-x-3">
+                  <div className={`p-2 rounded-lg ${prompt.color}`}>
+                    <prompt.icon className="h-5 w-5 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-medium text-sm text-blue-600 mb-2">
+                      {prompt.category}
+                    </div>
+                    <p className="text-sm text-gray-700 leading-relaxed">
+                      {prompt.prompt}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      {/* Did You Know Section */}
+      <div>
+        <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center space-x-2">
+          <Lightbulb className="h-5 w-5 text-yellow-500" />
+          <span>Did You Know?</span>
+        </h2>
+        <div className="grid md:grid-cols-2 gap-4">
+          {didYouKnowInsights.map((insight, index) => (
+            <Card key={index} className="bg-gradient-to-br from-slate-50 to-white">
+              <CardContent className="p-4">
+                <div className="flex items-start space-x-3">
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <insight.icon className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-gray-900 mb-1">{insight.title}</h3>
+                    <p className="text-sm text-gray-600">{insight.insight}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </div>
     </div>

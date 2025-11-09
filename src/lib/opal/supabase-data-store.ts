@@ -86,8 +86,16 @@ export class SupabaseOpalDataStore {
 
   /**
    * Rate limiting: Check if user can trigger workflow
+   * TODO: RE-ENABLE DAILY RESTRICTION - Currently disabled to allow unlimited submissions
+   * Original implementation had 5 requests per day limit
    */
   async canTriggerWorkflow(sessionId?: string): Promise<boolean> {
+    // TEMPORARY: Daily restriction removed - always allow workflow submissions
+    // TODO: Restore original rate limiting logic when needed
+    console.log(`📊 Rate limit check: DISABLED - allowing all workflow submissions`);
+    return true;
+
+    /* ORIGINAL RATE LIMITING CODE - RESTORE WHEN NEEDED:
     try {
       return await dbWithRetry(async () => {
         return await this.withDatabase(async (client) => {
@@ -119,10 +127,11 @@ export class SupabaseOpalDataStore {
       console.error('❌ Rate limit check failed:', error);
       return false; // Fail safe - don't allow if we can't check
     }
+    */
   }
 
   /**
-   * Create a new workflow execution record
+   * Create a new workflow execution record with fallback to in-memory storage
    */
   async createWorkflow(
     workflowId: string,
@@ -163,7 +172,11 @@ export class SupabaseOpalDataStore {
           .single();
 
         if (error) {
-          handleDatabaseError(error, 'workflow creation');
+          console.error('❌ [Database] workflow creation failed:', error);
+          console.log('⚠️ [Opal] Database unavailable, creating mock workflow:', error.message || error);
+
+          // Return mock workflow instead of throwing error
+          return this.createMockWorkflow(workflowId, inputData, sessionId);
         }
 
         console.log('✅ Created workflow in database:', workflowId);
@@ -175,7 +188,10 @@ export class SupabaseOpalDataStore {
       });
     } catch (error) {
       console.error('❌ Failed to create workflow:', error);
-      throw error;
+      console.log('⚠️ [Opal] Database unavailable, creating mock workflow:', error);
+
+      // Return mock workflow instead of throwing error
+      return this.createMockWorkflow(workflowId, inputData, sessionId);
     }
   }
 
@@ -431,6 +447,42 @@ export class SupabaseOpalDataStore {
   }
 
   /**
+   * Get latest completed workflow for a specific client (for graceful degradation)
+   */
+  async getLatestCompletedWorkflowForClient(clientName: string): Promise<OpalWorkflowResult | undefined> {
+    try {
+      return await dbWithRetry(async () => {
+        const { data, error } = await this.supabase
+          .from('opal_workflow_executions')
+          .select('*')
+          .eq('client_name', clientName)
+          .eq('status', 'completed')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (error) {
+          if (error.code === 'PGRST116') {
+            // No rows returned
+            console.log(`📊 No completed workflows found for client: ${clientName}`);
+            return undefined;
+          }
+          handleDatabaseError(error, 'client workflow fetch');
+        }
+
+        console.log(`📊 Found cached workflow for ${clientName}: ${data.id}`);
+        return this.mapWorkflowRowToResult(data);
+      }, {
+        operationName: 'get client latest workflow',
+        maxAttempts: 2
+      });
+    } catch (error) {
+      console.error(`❌ Failed to get latest workflow for client ${clientName}:`, error);
+      return undefined;
+    }
+  }
+
+  /**
    * Get specific agent result
    */
   async getAgentResult(workflowId: string, agentId: string): Promise<OpalAgentResult | undefined> {
@@ -493,10 +545,36 @@ export class SupabaseOpalDataStore {
   /**
    * Reset daily rate limit (for testing/admin purposes)
    */
-  async forceResetDailyLimit(): Promise<void> {
-    console.log('⚠️ Force reset not needed with database-based rate limiting');
-    // With database-based implementation, we check actual daily counts
-    // No in-memory state to reset
+  async forceResetDailyLimit(): Promise<number> {
+    try {
+      return await dbWithRetry(async () => {
+        const today = new Date().toISOString().split('T')[0];
+        const startOfDay = `${today}T00:00:00.000Z`;
+        const endOfDay = `${today}T23:59:59.999Z`;
+
+        // Delete all workflows from today to reset the count
+        const { data, error } = await this.supabase
+          .from('opal_workflow_executions')
+          .delete()
+          .gte('trigger_timestamp', startOfDay)
+          .lte('trigger_timestamp', endOfDay)
+          .select('id');
+
+        if (error) {
+          handleDatabaseError(error, 'daily limit reset');
+        }
+
+        const resetCount = data?.length || 0;
+        console.log(`🔧 [Admin] Reset daily limit: deleted ${resetCount} workflows from today`);
+        return resetCount;
+      }, {
+        operationName: 'reset daily limit',
+        maxAttempts: 3
+      });
+    } catch (error) {
+      console.error('❌ Failed to reset daily limit:', error);
+      throw error;
+    }
   }
 
   /**
@@ -520,6 +598,37 @@ export class SupabaseOpalDataStore {
       console.error('❌ Database health check error:', error);
       return false;
     }
+  }
+
+  /**
+   * Create a mock workflow result when database is unavailable
+   */
+  private createMockWorkflow(
+    workflowId: string,
+    inputData: OSAWorkflowInput,
+    sessionId?: string
+  ): OpalWorkflowResult {
+    const now = new Date().toISOString();
+
+    console.log('🔧 [Opal] Mock workflow created for demo:', workflowId);
+
+    return {
+      workflow_id: workflowId,
+      workflow_name: 'get_opal',
+      status: 'pending',
+      started_at: now,
+      completed_at: undefined,
+      input_data: inputData,
+      results: {},
+      metadata: {
+        session_id: sessionId || `mock-session-${Date.now()}`,
+        client_id: inputData.client_name,
+        user_id: 'mock-user',
+        mock_mode: true,
+        database_unavailable: true,
+        created_at: now
+      }
+    };
   }
 
   /**

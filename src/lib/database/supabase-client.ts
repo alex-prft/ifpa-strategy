@@ -67,8 +67,20 @@ export const createSupabaseAdmin = () => {
 };
 
 // Utility function for handling database errors
-export const handleDatabaseError = (error: any, operation: string): never => {
+export const handleDatabaseError = (error: any, operation: string, allowFallback: boolean = true): never => {
   console.error(`❌ [Database] ${operation} failed:`, error);
+
+  // Log detailed error information for debugging
+  console.error(`❌ [Database] Error details:`, {
+    message: error.message,
+    details: error.details || 'No details available',
+    hint: error.hint || '',
+    code: error.code || ''
+  });
+
+  if (allowFallback) {
+    console.log(`⚠️ [Database] ${operation} unavailable, system will continue with fallback behavior`);
+  }
 
   if (error.code) {
     throw new Error(`Database ${operation} failed: ${error.message} (Code: ${error.code})`);

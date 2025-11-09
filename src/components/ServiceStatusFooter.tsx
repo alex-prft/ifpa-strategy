@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useAuthStatus, useAuth } from '@/lib/contexts/AuthContext';
 import Link from 'next/link';
+import ForceSyncButton from './ForceSyncButton';
 
 export default function ServiceStatusFooter() {
   const { issues, clearIssues, resolveIssue } = useServiceStatus();
@@ -151,6 +152,15 @@ export default function ServiceStatusFooter() {
                     Admin
                   </Button>
                 </Link>
+              )}
+
+              {/* Force Sync button for authenticated users */}
+              {isAuthenticated && (
+                <ForceSyncButton
+                  variant="button"
+                  size="sm"
+                  className="h-7 px-2"
+                />
               )}
 
               {/* Logout button for authenticated users */}

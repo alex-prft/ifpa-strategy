@@ -18,6 +18,7 @@ import AEOAuditDashboard from './AEOAuditDashboard';
 import AIExperimentationRecommendations from './AIExperimentationRecommendations';
 import AIPersonalizationRecommendations from './AIPersonalizationRecommendations';
 import DataInsightsDashboard from './DataInsightsDashboard';
+import TalkToYourData from './TalkToYourData';
 import { OSAWorkflowOutput } from '@/lib/types/maturity';
 import {
   Search,
@@ -32,7 +33,8 @@ import {
   MoreHorizontal,
   ChevronUp,
   ChevronDown,
-  ExternalLink
+  ExternalLink,
+  MessageSquare
 } from 'lucide-react';
 
 interface EnhancedResultsPageProps {
@@ -40,6 +42,15 @@ interface EnhancedResultsPageProps {
 }
 
 const navigationTabs = [
+  {
+    id: 'ttyd',
+    label: 'Talk To Your Data',
+    description: 'Interactive data exploration and insights',
+    status: 'completed' as const,
+    progress: 100,
+    itemCount: 0,
+    icon: MessageSquare
+  },
   {
     id: 'strategy',
     label: 'Strategy Overview',
@@ -161,7 +172,7 @@ const progressItems = [
 ];
 
 export default function EnhancedResultsPage({ workflowResult }: EnhancedResultsPageProps) {
-  const [currentTab, setCurrentTab] = useState('strategy');
+  const [currentTab, setCurrentTab] = useState('ttyd');
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const [showProgressTracker, setShowProgressTracker] = useState(true);
@@ -245,6 +256,8 @@ export default function EnhancedResultsPage({ workflowResult }: EnhancedResultsP
 
   const renderTabContent = () => {
     switch (currentTab) {
+      case 'ttyd':
+        return <TalkToYourData workflowResult={workflowResult} />;
       case 'strategy':
         return (
           <div className="space-y-6">

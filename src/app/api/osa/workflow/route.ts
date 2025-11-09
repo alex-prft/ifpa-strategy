@@ -35,15 +35,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     console.log('Starting OSA workflow for client:', workflowInput.client_name);
 
-    // Check daily rate limit (unless force sync from admin)
+    // TODO: REMOVED DAILY LIMIT - Workflows can now be triggered without restriction
+    // Original daily limit check was here (5 per day), removed as requested
     const forceSync = request.headers.get('x-force-sync') === 'true';
-    if (!forceSync && !(await opalDataStore.canTriggerWorkflow())) {
-      return NextResponse.json<APIResponse<null>>({
-        success: false,
-        error: 'Daily workflow limit reached (5 per day). Try again tomorrow or use Force Sync from admin panel to override.',
-        timestamp: new Date().toISOString()
-      }, { status: 429 });
-    }
+    console.log('📊 Daily rate limiting: DISABLED - allowing unlimited workflow submissions');
 
     try {
       // Generate session ID for tracking this user's request
@@ -87,7 +82,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         sessionId
       );
 
-      // Note: Rate limiting is now handled automatically by Supabase data store
+      // NOTE: Rate limiting disabled - unlimited workflow submissions allowed
 
       // Step 3: Return loading state response with polling info
       const response: OSAWorkflowOutput = {
@@ -163,6 +158,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const { searchParams } = new URL(request.url);
     const workflowId = searchParams.get('workflow_id');
     const sessionId = searchParams.get('session_id');
+    const clientName = searchParams.get('client_name');
+    const useCached = searchParams.get('use_cached') === 'true';
 
     if (workflowId) {
       // Get specific workflow by ID
@@ -212,17 +209,50 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         timestamp: new Date().toISOString()
       });
 
+    } else if (clientName && useCached) {
+      // Get latest completed workflow for client (graceful degradation)
+      console.log(`🔄 [API] Retrieving cached data for client: ${clientName}`);
+
+      const cachedWorkflow = await opalDataStore.getLatestCompletedWorkflowForClient(clientName);
+      if (!cachedWorkflow) {
+        return NextResponse.json<APIResponse<null>>({
+          success: false,
+          error: `No completed workflows found for client: ${clientName}`,
+          message: 'No cached results available for this client',
+          timestamp: new Date().toISOString()
+        }, { status: 404 });
+      }
+
+      console.log(`✅ [API] Returning cached workflow: ${cachedWorkflow.workflow_id}`);
+
+      return NextResponse.json<APIResponse<any>>({
+        success: true,
+        data: {
+          workflow_id: cachedWorkflow.workflow_id,
+          status: cachedWorkflow.status,
+          started_at: cachedWorkflow.started_at,
+          completed_at: cachedWorkflow.completed_at,
+          results: cachedWorkflow.results,
+          input_data: cachedWorkflow.input_data,
+          isFromCache: true,
+          cacheSource: 'latest_completed_workflow'
+        },
+        message: `Retrieved cached results from ${cachedWorkflow.completed_at}`,
+        timestamp: new Date().toISOString()
+      });
+
     } else {
       // Return general OSA workflow status and info
       const latestWorkflow = await opalDataStore.getLatestWorkflow();
-      const canTriggerNew = await opalDataStore.canTriggerWorkflow();
+      // TODO: REMOVED DAILY LIMIT CHECK - Always allow new workflows
 
       return NextResponse.json({
         workflow_name: 'get_opal',
         description: 'OSA Workflow with Opal integration',
         version: '2.0.0',
         status: 'healthy',
-        daily_limit_reached: !canTriggerNew,
+        daily_limit_reached: false, // Always false - unlimited workflows
+        unlimited_mode: true, // Indicate unlimited submissions are enabled
         latest_workflow: latestWorkflow ? {
           workflow_id: latestWorkflow.workflow_id,
           status: latestWorkflow.status,

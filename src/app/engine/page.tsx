@@ -234,20 +234,9 @@ export default function EnginePage() {
       {/* Footer */}
       <footer className="border-t bg-white">
         <div className="container mx-auto px-4 py-8">
-          <div className="flex justify-between items-center">
+          <div className="text-center">
             <div className="text-sm text-muted-foreground">
               © 2025 Opal Personalization Generator from Perficient. Powered by Opal AI.
-            </div>
-            <div className="flex space-x-6">
-              <Button variant="link" size="sm" asChild>
-                <Link href="/how-it-works">How It Works</Link>
-              </Button>
-              <Button variant="link" size="sm" asChild>
-                <a href="/api/mcp">MCP API</a>
-              </Button>
-              <Button variant="link" size="sm" asChild>
-                <a href="https://github.com/alex-prft/ifpa-strategy">GitHub</a>
-              </Button>
             </div>
           </div>
         </div>

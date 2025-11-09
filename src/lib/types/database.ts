@@ -593,6 +593,62 @@ export interface Database {
           check_timestamp?: string;
         };
       };
+      opal_webhook_events: {
+        Row: {
+          id: string;
+          event_type: string;
+          workflow_id: string;
+          workflow_name?: string;
+          agent_id?: string;
+          agent_name?: string;
+          session_id?: string;
+          received_at: string;
+          payload: any;
+          success: boolean;
+          error_message?: string;
+          processing_time_ms?: number;
+          source_ip?: string;
+          user_agent?: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          event_type: string;
+          workflow_id: string;
+          workflow_name?: string;
+          agent_id?: string;
+          agent_name?: string;
+          session_id?: string;
+          received_at?: string;
+          payload?: any;
+          success?: boolean;
+          error_message?: string;
+          processing_time_ms?: number;
+          source_ip?: string;
+          user_agent?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          event_type?: string;
+          workflow_id?: string;
+          workflow_name?: string;
+          agent_id?: string;
+          agent_name?: string;
+          session_id?: string;
+          received_at?: string;
+          payload?: any;
+          success?: boolean;
+          error_message?: string;
+          processing_time_ms?: number;
+          source_ip?: string;
+          user_agent?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
     };
     Views: {
       [_ in never]: never;
