@@ -1,7 +1,7 @@
 {
   "name": "OSA Workflow Data Sharing",
   "description": "Core workflow data sharing and communication tools for OSA personalization strategy agents",
-  "discovery_url": "http://localhost:3000/api/opal/enhanced-tools",
+  "discovery_url": "https://ifpa-strategy.vercel.app/api/opal/enhanced-tools",
   "registry_id": "osa_workflow_data",
   "version": "1.0.0",
   "tools": [
@@ -150,9 +150,9 @@
     "header_value": "Bearer ${OPAL_WORKFLOW_TOKEN}"
   },
   "integration_endpoints": {
-    "data_storage": "http://localhost:3000/api/opal/workflow-data",
-    "osa_webhook_agent": "http://localhost:3000/api/webhooks/opal-workflow",
-    "osa_webhook_results": "http://localhost:3000/api/opal/workflow-results",
-    "validation_service": "http://localhost:3000/api/opal/validate"
+    "data_storage": "https://ifpa-strategy.vercel.app/api/opal/workflow-data",
+    "osa_webhook_agent": "https://ifpa-strategy.vercel.app/api/webhooks/opal-workflow",
+    "osa_webhook_results": "https://ifpa-strategy.vercel.app/api/opal/workflow-results",
+    "validation_service": "https://ifpa-strategy.vercel.app/api/opal/validate"
   }
 }
