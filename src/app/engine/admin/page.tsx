@@ -2288,7 +2288,7 @@ function OPALMonitoringContent() {
   const [isAutoRefresh, setIsAutoRefresh] = useState(true);
   const [lastRefresh, setLastRefresh] = useState(new Date());
   const [systemStatus, setSystemStatus] = useState<'healthy' | 'warning' | 'critical'>('healthy');
-  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'connecting'>('connected');
+  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'connecting'>('disconnected');
   const [webhookStats, setWebhookStats] = useState({
     total_received: 0,
     successful: 0,
@@ -2308,6 +2308,82 @@ function OPALMonitoringContent() {
     roadmap_generator: 'unknown',
     cmp_organizer: 'unknown'
   });
+
+  // Recent webhook events for display
+  const [recentEvents, setRecentEvents] = useState<Array<{
+    id: string;
+    type: string;
+    agent: string;
+    status: 'success' | 'failed';
+    time: string;
+    received_at: string;
+  }>>([]);
+
+  // Fetch real webhook statistics from API
+  const fetchWebhookStats = async () => {
+    try {
+      const response = await fetch('/api/webhook-events/stats?hours=24');
+      const data = await response.json();
+
+      if (data.success) {
+        // Update webhook stats
+        setWebhookStats(data.stats);
+
+        // Update system and connection status
+        setSystemStatus(data.status.system_status === 'healthy' ? 'healthy' :
+                       data.status.system_status === 'warning' ? 'warning' : 'critical');
+        setConnectionStatus(data.status.connection_status);
+
+        // Update agent statuses based on real webhook data
+        setAgentStatuses(data.agentStatuses);
+
+        console.log('📊 Webhook stats updated:', data.stats);
+      } else {
+        console.error('Failed to fetch webhook stats:', data.error);
+        // On error, show disconnected status
+        setConnectionStatus('disconnected');
+        setSystemStatus('critical');
+      }
+
+      // Fetch recent webhook events for display
+      const eventsResponse = await fetch('/api/webhook-events/stream', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          workflow_id: 'strategy_assistant',
+          limit: 10
+        })
+      });
+
+      const eventsData = await eventsResponse.json();
+      if (eventsData.success && eventsData.events) {
+        // Transform events for display
+        const transformedEvents = eventsData.events.map((event: any) => ({
+          id: event.id,
+          type: event.event_type || 'webhook.received',
+          agent: event.agent_name || event.agent_id || 'unknown',
+          status: event.success ? 'success' as const : 'failed' as const,
+          time: event.received_at ? new Date(event.received_at).toLocaleTimeString() : 'unknown',
+          received_at: event.received_at
+        }));
+
+        setRecentEvents(transformedEvents);
+        console.log('📋 Recent events updated:', transformedEvents.length, 'events');
+      } else {
+        // No events or error - show empty state
+        setRecentEvents([]);
+      }
+
+    } catch (error) {
+      console.error('Error fetching webhook stats:', error);
+      // On error, show disconnected status
+      setConnectionStatus('disconnected');
+      setSystemStatus('critical');
+      setRecentEvents([]);
+    }
+  };
 
   // Get agent status circle color
   const getAgentStatusColor = (status: 'unknown' | 'success' | 'failed') => {
@@ -2329,28 +2405,25 @@ function OPALMonitoringContent() {
     }
   };
 
-  // Auto-refresh effect
+  // Auto-refresh effect - fetch real webhook data
   useEffect(() => {
+    // Initial fetch when component mounts
+    fetchWebhookStats();
+
     if (!isAutoRefresh) return;
 
-    const interval = setInterval(() => {
+    const interval = setInterval(async () => {
       setLastRefresh(new Date());
-      // Simulate updating stats (in real app, would fetch from API)
-      setWebhookStats(prev => ({
-        ...prev,
-        total_received: prev.total_received + Math.floor(Math.random() * 3),
-        successful: prev.successful + Math.floor(Math.random() * 2),
-        failed: prev.failed + Math.floor(Math.random() * 0.3),
-        last_24h: prev.last_24h + Math.floor(Math.random() * 2)
-      }));
-    }, 5000); // Refresh every 5 seconds
+      await fetchWebhookStats();
+    }, 10000); // Refresh every 10 seconds (reduced frequency for real API)
 
     return () => clearInterval(interval);
   }, [isAutoRefresh]);
 
-  const handleManualRefresh = () => {
+  const handleManualRefresh = async () => {
     setLastRefresh(new Date());
-    console.log('🔄 Manual refresh triggered');
+    console.log('🔄 Manual refresh triggered - fetching real webhook data');
+    await fetchWebhookStats();
   };
 
   const handleRunSimulator = async () => {
@@ -2738,28 +2811,35 @@ function OPALMonitoringContent() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {[
-                  { type: 'osa_workflow_data.received', agent: 'content_review', status: 'success', time: '10:34:22' },
-                  { type: 'agent.completed', agent: 'geo_audit', status: 'success', time: '10:33:45' },
-                  { type: 'osa_workflow_data.received', agent: 'audience_suggester', status: 'failed', time: '10:32:18' },
-                  { type: 'workflow.triggered', agent: 'all', status: 'success', time: '10:30:00' }
-                ].map((event, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <Badge variant={event.status === 'success' ? 'default' : 'destructive'}>
-                        {event.type}
-                      </Badge>
-                      <span className="text-sm font-medium">{event.agent}</span>
+                {recentEvents.length > 0 ? (
+                  recentEvents.map((event) => (
+                    <div key={event.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <Badge variant={event.status === 'success' ? 'default' : 'destructive'}>
+                          {event.type}
+                        </Badge>
+                        <span className="text-sm font-medium">{event.agent}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {event.status === 'success' ?
+                          <CheckCircle className="h-4 w-4 text-green-600" /> :
+                          <XCircle className="h-4 w-4 text-red-600" />
+                        }
+                        <span className="text-sm text-gray-500">{event.time}</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {event.status === 'success' ?
-                        <CheckCircle className="h-4 w-4 text-green-600" /> :
-                        <XCircle className="h-4 w-4 text-red-600" />
-                      }
-                      <span className="text-sm text-gray-500">{event.time}</span>
-                    </div>
+                  ))
+                ) : (
+                  <div className="flex flex-col items-center justify-center p-8 text-gray-500">
+                    <XCircle className="h-12 w-12 text-gray-300 mb-3" />
+                    <p className="text-lg font-medium mb-2">No webhook events received</p>
+                    <p className="text-sm text-center">
+                      No OPAL workflow triggers have been received yet.
+                      <br />
+                      Use the Force Sync button to test the connection.
+                    </p>
                   </div>
-                ))}
+                )}
               </div>
             </CardContent>
           </Card>
@@ -2771,7 +2851,9 @@ function OPALMonitoringContent() {
             <Card>
               <CardContent className="p-4">
                 <div className="text-center">
-                  <p className="text-2xl font-bold">2.3s</p>
+                  <p className="text-2xl font-bold">
+                    {webhookStats.total_received > 0 ? '< 1s' : '--'}
+                  </p>
                   <p className="text-sm text-gray-600">Avg Response Time</p>
                 </div>
               </CardContent>
@@ -2779,7 +2861,12 @@ function OPALMonitoringContent() {
             <Card>
               <CardContent className="p-4">
                 <div className="text-center">
-                  <p className="text-2xl font-bold">99.2%</p>
+                  <p className="text-2xl font-bold">
+                    {webhookStats.total_received > 0
+                      ? `${Math.round((webhookStats.successful / webhookStats.total_received) * 100)}%`
+                      : '0%'
+                    }
+                  </p>
                   <p className="text-sm text-gray-600">Success Rate</p>
                 </div>
               </CardContent>
@@ -2787,16 +2874,19 @@ function OPALMonitoringContent() {
             <Card>
               <CardContent className="p-4">
                 <div className="text-center">
-                  <p className="text-2xl font-bold">156</p>
-                  <p className="text-sm text-gray-600">Requests/Hour</p>
+                  <p className="text-2xl font-bold">{webhookStats.last_24h}</p>
+                  <p className="text-sm text-gray-600">Events/24h</p>
                 </div>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
                 <div className="text-center">
-                  <p className="text-2xl font-bold">99.8%</p>
-                  <p className="text-sm text-gray-600">Uptime</p>
+                  <p className="text-2xl font-bold">
+                    {connectionStatus === 'connected' ? '100%' :
+                     connectionStatus === 'connecting' ? '50%' : '0%'}
+                  </p>
+                  <p className="text-sm text-gray-600">Connection Status</p>
                 </div>
               </CardContent>
             </Card>

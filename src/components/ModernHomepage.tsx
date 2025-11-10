@@ -28,7 +28,7 @@ export default function ModernHomepage() {
     },
     {
       icon: <Target className="h-6 w-6" />,
-      title: "Precision Targeting",
+      title: "Uncover Audiences",
       description: "Create targeted experiences with audience segmentation"
     },
   ];
@@ -37,7 +37,7 @@ export default function ModernHomepage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
       {/* Header */}
-      <header className="border-b bg-white/80 backdrop-blur-sm">
+      <header id="homepage-header" className="border-b bg-white/80 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-6">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-4">
@@ -63,11 +63,11 @@ export default function ModernHomepage() {
       </header>
 
       {/* Hero Section */}
-      <section className="container mx-auto px-4 py-16 text-center">
+      <section id="homepage-hero" className="container mx-auto px-4 pt-16 pb-8 text-center">
         <div className="max-w-4xl mx-auto space-y-8">
           <div className="space-y-4">
             <h2 className="text-4xl font-bold tracking-tight">
-              AI-Powered Strategy Assistant for Optimizely DXP
+              Opal Strategy Assistant for Optimizely DXP
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               Get personalized recommendations, strategy insights, and implementation roadmaps tailored to your Optimizely DXP setup. Built by Perficient.
@@ -97,7 +97,7 @@ export default function ModernHomepage() {
       </section>
 
       {/* CTA Section */}
-      <section className="container mx-auto px-4 py-12 text-center">
+      <section id="homepage-cta" className="container mx-auto px-4 pb-12 text-center">
         <div className="max-w-4xl mx-auto">
           <Button asChild size="lg" className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-6 text-lg gap-3 shadow-lg hover:shadow-xl transition-all">
             <Link href="/engine">
@@ -109,7 +109,7 @@ export default function ModernHomepage() {
       </section>
 
       {/* How It Works Section */}
-      <section className="container mx-auto px-4 py-16 bg-gradient-to-r from-slate-50 to-gray-50">
+      <section id="homepage-how-it-works" className="container mx-auto px-4 py-16 bg-gradient-to-r from-slate-50 to-gray-50">
         <div className="max-w-4xl mx-auto text-center space-y-8">
           <div className="space-y-4">
             <h3 className="text-3xl font-bold">How It Works</h3>
@@ -129,7 +129,7 @@ export default function ModernHomepage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t bg-white">
+      <footer id="homepage-footer" className="border-t bg-white">
         <div className="container mx-auto px-4 py-8">
           <div className="text-center">
             <div className="text-sm text-muted-foreground">

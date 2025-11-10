@@ -3,6 +3,7 @@
 
 import { createSupabaseAdmin, handleDatabaseError } from './supabase-client';
 import type { Database } from '@/lib/types/database';
+import { fileBasedStorage } from './file-storage';
 
 const supabase = createSupabaseAdmin();
 
@@ -65,9 +66,14 @@ export class WebhookEventOperations {
       if (error) throw error;
       return data.id;
     } catch (error) {
-      console.error('Failed to store webhook event:', error);
-      // Return mock ID for resilience
-      return `mock-webhook-${Date.now()}`;
+      console.error('Database storage failed, falling back to file storage:', error);
+      // Fallback to file-based storage
+      try {
+        return await fileBasedStorage.storeWebhookEvent(event);
+      } catch (fileError) {
+        console.error('File storage also failed:', fileError);
+        return `fallback-webhook-${Date.now()}`;
+      }
     }
   }
 
@@ -120,8 +126,14 @@ export class WebhookEventOperations {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Failed to fetch webhook events:', error);
-      return [];
+      console.error('Database query failed, falling back to file storage:', error);
+      // Fallback to file-based storage
+      try {
+        return await fileBasedStorage.getWebhookEvents(query);
+      } catch (fileError) {
+        console.error('File storage query also failed:', fileError);
+        return [];
+      }
     }
   }
 
@@ -141,8 +153,14 @@ export class WebhookEventOperations {
       if (error && error.code !== 'PGRST116') throw error; // PGRST116 = no rows
       return data || null;
     } catch (error) {
-      console.error('Failed to fetch latest webhook for session:', error);
-      return null;
+      console.error('Database query failed, falling back to file storage:', error);
+      // Fallback to file-based storage
+      try {
+        return await fileBasedStorage.getLatestWebhookForSession(sessionId);
+      } catch (fileError) {
+        console.error('File storage query also failed:', fileError);
+        return null;
+      }
     }
   }
 
@@ -192,14 +210,20 @@ export class WebhookEventOperations {
         event_types
       };
     } catch (error) {
-      console.error('Failed to fetch webhook stats:', error);
-      return {
-        total_events: 0,
-        success_rate: 100,
-        failed_events: 0,
-        avg_processing_time: 0,
-        event_types: {}
-      };
+      console.error('Database stats query failed, falling back to file storage:', error);
+      // Fallback to file-based storage
+      try {
+        return await fileBasedStorage.getWebhookStats(hours);
+      } catch (fileError) {
+        console.error('File storage stats query also failed:', fileError);
+        return {
+          total_events: 0,
+          success_rate: 100,
+          failed_events: 0,
+          avg_processing_time: 0,
+          event_types: {}
+        };
+      }
     }
   }
 
@@ -258,13 +282,19 @@ export class WebhookEventOperations {
         connection_status
       };
     } catch (error) {
-      console.error('Failed to get webhook status:', error);
-      return {
-        last_webhook_received: null,
-        webhook_health: 'error',
-        recent_failures: 0,
-        connection_status: 'disconnected'
-      };
+      console.error('Database status query failed, falling back to file storage:', error);
+      // Fallback to file-based storage
+      try {
+        return await fileBasedStorage.getWebhookStatus();
+      } catch (fileError) {
+        console.error('File storage status query also failed:', fileError);
+        return {
+          last_webhook_received: null,
+          webhook_health: 'error',
+          recent_failures: 0,
+          connection_status: 'disconnected'
+        };
+      }
     }
   }
 

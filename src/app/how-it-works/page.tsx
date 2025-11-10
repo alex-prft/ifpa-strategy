@@ -20,10 +20,10 @@ export default function HowItWorksPage() {
   const cookingSteps = [
     {
       step: "01",
-      title: "Gather the Ingredients",
-      subtitle: "Data Collection & Context",
+      title: "Gather the Data and Objectives",
+      subtitle: "",
       icon: <Database className="h-8 w-8" />,
-      description: "OSA collects everything needed for the perfect strategy dish",
+      description: "automatically collect all your Optimzely DXP data in one place",
       ingredients: [
         { name: "Data & Insights", source: "from Optimizely and other sources", service: "Ingestion & Orchestration Service" },
         { name: "Business Context", source: "objectives and constraints", service: "Strategy Intake Service" },
@@ -34,10 +34,10 @@ export default function HowItWorksPage() {
     },
     {
       step: "02",
-      title: "Use Proven Recipes",
-      subtitle: "Industry Best Practices",
+      title: "Use Proven Strategies",
+      subtitle: "",
       icon: <BookOpen className="h-8 w-8" />,
-      description: "Standard recipes ensure quality and consistency",
+      description: "Go Beyond Best Practices To Accelerate Your Success",
       ingredients: [
         { name: "Industry Standards", source: "proven methodologies", service: "Knowledge & Retrieval Service" },
         { name: "Best Practices", source: "tested strategies", service: "Knowledge & Retrieval Service" },
@@ -48,10 +48,10 @@ export default function HowItWorksPage() {
     },
     {
       step: "03",
-      title: "Customize Your Meal Plan",
-      subtitle: "Personalized Strategy Creation",
+      title: "Customize Your Marketing Strategy",
+      subtitle: "",
       icon: <Target className="h-8 w-8" />,
-      description: "Blend ingredients with your unique goals and preferences",
+      description: "Tailor your strategy to your business goals and objectives",
       ingredients: [
         { name: "Custom Strategy", source: "tailored to your business", service: "Recommendation Service" },
         { name: "Goal Alignment", source: "fits your objectives perfectly", service: "Recommendation Service" },
@@ -62,10 +62,10 @@ export default function HowItWorksPage() {
     },
     {
       step: "04",
-      title: "Continuous Learning",
-      subtitle: "Living Recipe Book",
+      title: "Get Smarter",
+      subtitle: "",
       icon: <Sparkles className="h-8 w-8" />,
-      description: "Strategies become smarter and more effective over time",
+      description: "Your assistant is your second brain and becomes smarter over time",
       ingredients: [
         { name: "Learning Engine", source: "from every interaction", service: "Knowledge & Retrieval Service" },
         { name: "Smart Adaptation", source: "evolving recommendations", service: "Knowledge & Retrieval Service" },
@@ -76,10 +76,10 @@ export default function HowItWorksPage() {
     },
     {
       step: "05",
-      title: "Elegant Presentation",
-      subtitle: "Beautiful Strategy Plating",
+      title: "Easy To Understand Your Data",
+      subtitle: "",
       icon: <Palette className="h-8 w-8" />,
-      description: "Beautifully presented with intuitive dashboards and insights",
+      description: "Inituitive Dashboard that are personalized to your preferences",
       ingredients: [
         { name: "Intuitive Dashboards", source: "clear navigation", service: "UX Design Service (Artist)" },
         { name: "Insightful Charts", source: "visual data stories", service: "UX Design Service (Artist)" },
@@ -90,10 +90,10 @@ export default function HowItWorksPage() {
     },
     {
       step: "06",
-      title: "Future Brainstorming",
-      subtitle: "Chat with Your Chef",
+      title: "Talk To Your Data",
+      subtitle: "",
       icon: <MessageSquare className="h-8 w-8" />,
-      description: "Soon: Real-time conversation and strategy refinement",
+      description: "Leverage the chat features to brainstorm with your assistant for strategy refinement",
       ingredients: [
         { name: "Natural Conversation", source: "chat interface", service: "Conversational Analytics Service (TTYD)" },
         { name: "Idea Brainstorming", source: "collaborative strategy sessions", service: "Conversational Analytics Service (TTYD)" },
@@ -112,26 +112,35 @@ export default function HowItWorksPage() {
         <div className="container mx-auto px-4 py-6">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-4">
-              <Link href="/" className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg p-3 hover:from-blue-700 hover:to-indigo-700 transition-colors">
-                <Sparkles className="h-8 w-8" />
+              <Link href="/" className="rounded-lg p-2 hover:scale-105 transition-transform">
+                <Image
+                  src="/images/gradient-orb.png"
+                  alt="Optimizely Strategy Assistant"
+                  width={40}
+                  height={40}
+                  className="rounded-full"
+                />
               </Link>
               <div>
-                <h1 className="text-2xl font-bold">How It Works</h1>
-                <p className="text-muted-foreground">Your Strategy, Served Fresh</p>
+                <h1 className="text-2xl font-bold">Optimizely Strategy Assistant</h1>
+                <p className="text-sm text-muted-foreground">Created by Perficient</p>
               </div>
             </div>
-            <Link href="/engine">
-              <Button className="gap-2">
-                Try OSA Engine
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </Link>
+            <div className="flex items-center space-x-4">
+              <span className="text-sm text-muted-foreground">BETA v1.0</span>
+              <Link href="/engine">
+                <Button className="gap-2">
+                  Start Your Assistant
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </header>
 
       {/* Hero Section */}
-      <section className="container mx-auto px-4 py-16 text-center">
+      <section id="how-it-works-hero" className="container mx-auto px-4 pt-16 pb-8 text-center">
         <div className="max-w-6xl mx-auto space-y-8">
           <div className="flex items-center justify-center mb-8">
             <div className="relative w-full max-w-4xl">
@@ -150,18 +159,17 @@ export default function HowItWorksPage() {
               Your Personal Strategy Assistant
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              Imagine a world-class chef creating a custom meal plan tailored to your goals.
-              Here's how OSA creates your perfect strategy recipe.
+              Imagine a world-class strategy team creating customized, actionable strategies with your data and goals. Here's how your assistant works...
             </p>
           </div>
         </div>
       </section>
 
       {/* Cooking Process Steps */}
-      <section className="container mx-auto px-4 py-12">
+      <section id="how-it-works-steps" className="container mx-auto px-4 pb-12">
         <div className="space-y-8">
           {cookingSteps.map((step, index) => (
-            <div key={step.step} className="relative">
+            <div key={step.step} id={`how-it-works-step-${step.step}`} className="relative">
               <Card className={`bg-gradient-to-br ${step.color} border hover:shadow-lg transition-all duration-300 ${step.comingSoon ? 'opacity-75' : ''}`}>
                 <CardContent className="p-6">
                   <div className="text-center space-y-6">
@@ -215,7 +223,7 @@ export default function HowItWorksPage() {
       </section>
 
       {/* Result Section */}
-      <section className="container mx-auto px-4 py-16">
+      <section id="how-it-works-result" className="container mx-auto px-4 py-16">
         <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 overflow-hidden">
           <CardContent className="p-12 text-center">
             <div className="max-w-4xl mx-auto space-y-8">
@@ -226,15 +234,16 @@ export default function HowItWorksPage() {
               </div>
 
               <h3 className="text-3xl font-bold text-green-900">
-                The Perfect Strategy Menu
+                Your Customized Optimizely Strategy
               </h3>
 
               <p className="text-xl text-green-700 leading-relaxed max-w-3xl mx-auto">
-                A <strong>tailored, data-driven strategy</strong> that's expertly prepared, continuously improved,
-                and elegantly presented—just like a perfectly curated tasting menu for your business.
+                A tailored, data-driven strategy that's expertly actionable, continuously improved,
+                and customized for your
+                business and marketing objectives.
               </p>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
+              <div id="how-it-works-features" className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
                 <div className="space-y-3">
                   <div className="p-3 bg-green-100 rounded-lg inline-block">
                     <Target className="h-6 w-6 text-green-600" />
@@ -260,10 +269,10 @@ export default function HowItWorksPage() {
                 </div>
               </div>
 
-              <div className="pt-8">
+              <div id="how-it-works-cta" className="pt-8">
                 <Link href="/engine">
                   <Button size="lg" className="gap-2 bg-green-600 hover:bg-green-700 text-white px-8">
-                    Start Cooking Your Strategy
+                    Start Your Strategy Assistant
                     <ChefHat className="h-5 w-5" />
                   </Button>
                 </Link>
@@ -278,21 +287,7 @@ export default function HowItWorksPage() {
         <div className="container mx-auto px-4 py-8">
           <div className="flex justify-between items-center">
             <div className="text-sm text-muted-foreground">
-              © 2025 OSA Strategy Assistant from Perficient. Your Personal Strategy Chef.
-            </div>
-            <div className="flex space-x-6">
-              <Button variant="link" size="sm" asChild>
-                <Link href="/">Home</Link>
-              </Button>
-              <Button variant="link" size="sm" asChild>
-                <Link href="/engine">Strategy Engine</Link>
-              </Button>
-              <Button variant="link" size="sm" asChild>
-                <a href="/api/mcp">MCP API</a>
-              </Button>
-              <Button variant="link" size="sm" asChild>
-                <a href="https://github.com/alex-prft/ifpa-strategy">GitHub</a>
-              </Button>
+              © 2025 OSA Strategy Assistant from Perficient.
             </div>
           </div>
         </div>
