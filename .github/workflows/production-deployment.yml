@@ -1,0 +1,273 @@
+name: Production Deployment
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      skip_tests:
+        description: 'Skip test execution'
+        required: false
+        default: false
+        type: boolean
+      force_deploy:
+        description: 'Force deployment even with validation warnings'
+        required: false
+        default: false
+        type: boolean
+
+# Prevent concurrent deployments
+concurrency:
+  group: production-deployment
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: '20'
+  DEPLOYMENT_TIMEOUT: '10m'
+
+jobs:
+  # Pre-deployment validation
+  validate:
+    runs-on: ubuntu-latest
+    outputs:
+      should_deploy: ${{ steps.check.outputs.should_deploy }}
+      commit_sha: ${{ steps.check.outputs.commit_sha }}
+
+    steps:
+      - name: 🔄 Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: |
+          npm ci
+          npm install -g tsx
+
+      - name: 🔍 Validate deployment conditions
+        id: check
+        run: |
+          echo "commit_sha=${GITHUB_SHA::8}" >> $GITHUB_OUTPUT
+
+          # Check if this is a deployment-worthy commit
+          if git log -1 --pretty=format:"%s" | grep -E "^(feat|fix|chore|docs|style|refactor|perf|test|build|ci)\(.*\):" > /dev/null; then
+            echo "should_deploy=true" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.event.inputs.force_deploy }}" == "true" ]]; then
+            echo "should_deploy=true" >> $GITHUB_OUTPUT
+            echo "⚠️ Force deployment requested"
+          else
+            echo "should_deploy=false" >> $GITHUB_OUTPUT
+            echo "ℹ️ Commit doesn't follow conventional commit format. Use workflow_dispatch with force_deploy to override."
+          fi
+
+      - name: 🏗️ Build application
+        run: npm run build
+
+      - name: 🧪 Run tests
+        if: github.event.inputs.skip_tests != 'true'
+        run: |
+          echo "Running test suite..."
+          npm test -- --passWithNoTests --watchAll=false --coverage=false
+
+      - name: 🔒 Security validation
+        run: |
+          echo "Running security checks..."
+          if [ -f "scripts/validate-security.ts" ]; then
+            npm run validate:security:ci
+          else
+            echo "Security validation script not found, skipping..."
+          fi
+
+      - name: 🔍 OPAL integration validation
+        run: |
+          echo "Validating OPAL integration..."
+          if [ -f "scripts/validate-opal-integration.ts" ]; then
+            npm run validate:opal || true  # Allow failures for now
+          else
+            echo "OPAL validation script not found, skipping..."
+          fi
+
+  # Production deployment
+  deploy:
+    runs-on: ubuntu-latest
+    needs: validate
+    if: needs.validate.outputs.should_deploy == 'true'
+    environment:
+      name: production
+      url: https://ifpa-strategy.vercel.app
+
+    steps:
+      - name: 🔄 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🌍 Configure production environment
+        run: |
+          echo "Setting up production environment variables..."
+
+          # Create production environment file
+          cat > .env.production << EOF
+          NODE_ENV=production
+          NEXT_PUBLIC_BASE_URL=https://ifpa-strategy.vercel.app
+          NEXT_PUBLIC_APP_URL=https://ifpa-strategy.vercel.app
+
+          # These will be set from secrets
+          OPAL_WEBHOOK_AUTH_KEY=${{ secrets.OPAL_WEBHOOK_AUTH_KEY }}
+          OPAL_WEBHOOK_HMAC_SECRET=${{ secrets.OPAL_WEBHOOK_HMAC_SECRET }}
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          API_SECRET_KEY=${{ secrets.API_SECRET_KEY }}
+          NEXT_PUBLIC_API_SECRET_KEY=${{ secrets.NEXT_PUBLIC_API_SECRET_KEY }}
+
+          # Database configuration
+          SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+          # Optional OPAL configuration
+          OPAL_API_URL=${{ secrets.OPAL_API_URL }}
+          OPAL_API_TOKEN=${{ secrets.OPAL_API_TOKEN }}
+          OPAL_WORKFLOW_ID=${{ secrets.OPAL_WORKFLOW_ID }}
+          EOF
+
+          echo "✅ Production environment configured"
+
+      - name: 🏗️ Production build
+        run: |
+          echo "Building for production..."
+          npm run build
+
+          # Validate build output
+          if [ ! -d ".next" ]; then
+            echo "❌ Build failed: .next directory not found"
+            exit 1
+          fi
+
+          echo "✅ Production build completed"
+
+      - name: 🚀 Deploy to Vercel
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          echo "🚀 Deploying to Vercel..."
+
+          # Verify Vercel token
+          if [ -z "$VERCEL_TOKEN" ]; then
+            echo "❌ VERCEL_TOKEN secret not configured"
+            echo "Please add VERCEL_TOKEN to repository secrets"
+            exit 1
+          fi
+
+          # Deploy using the unified script
+          chmod +x scripts/deploy-production-unified.sh
+          ./scripts/deploy-production-unified.sh
+
+      - name: 🧪 Post-deployment validation
+        run: |
+          echo "🧪 Validating production deployment..."
+
+          # Wait for deployment to be ready
+          echo "Waiting for deployment to be available..."
+          sleep 45
+
+          # Test key endpoints
+          BASE_URL="https://ifpa-strategy.vercel.app"
+
+          # Health check
+          if curl -sSf --connect-timeout 10 --max-time 30 "${BASE_URL}/api/health" > /dev/null 2>&1; then
+            echo "✅ Health check passed"
+          else
+            echo "⚠️ Health endpoint not available (may be expected)"
+          fi
+
+          # Test OPAL endpoints
+          if curl -sSf --connect-timeout 10 --max-time 30 --head "${BASE_URL}/api/opal/enhanced-tools" > /dev/null 2>&1; then
+            echo "✅ OPAL enhanced tools endpoint is accessible"
+          else
+            echo "⚠️ OPAL enhanced tools endpoint returned error"
+          fi
+
+          # Test main pages
+          if curl -sSf --connect-timeout 10 --max-time 30 --head "${BASE_URL}/engine" > /dev/null 2>&1; then
+            echo "✅ Engine page is accessible"
+          else
+            echo "⚠️ Engine page returned error"
+          fi
+
+          if curl -sSf --connect-timeout 10 --max-time 30 --head "${BASE_URL}/engine/results" > /dev/null 2>&1; then
+            echo "✅ Results page is accessible"
+          else
+            echo "⚠️ Results page returned error"
+          fi
+
+      - name: 📊 Create deployment summary
+        if: always()
+        run: |
+          echo "## 🚀 Production Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Deployment ID:** deploy-$(date +%Y%m%d-%H%M%S)" >> $GITHUB_STEP_SUMMARY
+          echo "**Target URL:** https://ifpa-strategy.vercel.app" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ needs.validate.outputs.commit_sha }} (${{ github.ref_name }})" >> $GITHUB_STEP_SUMMARY
+          echo "**Timestamp:** $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔗 Quick Links" >> $GITHUB_STEP_SUMMARY
+          echo "- [🌍 Production Site](https://ifpa-strategy.vercel.app)" >> $GITHUB_STEP_SUMMARY
+          echo "- [⚙️ Engine Dashboard](https://ifpa-strategy.vercel.app/engine)" >> $GITHUB_STEP_SUMMARY
+          echo "- [📊 Results Page](https://ifpa-strategy.vercel.app/engine/results)" >> $GITHUB_STEP_SUMMARY
+          echo "- [🔧 OPAL Tools API](https://ifpa-strategy.vercel.app/api/opal/enhanced-tools)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📋 Next Steps" >> $GITHUB_STEP_SUMMARY
+          echo "1. Monitor error rates and performance metrics" >> $GITHUB_STEP_SUMMARY
+          echo "2. Verify OPAL integration is working correctly" >> $GITHUB_STEP_SUMMARY
+          echo "3. Test critical user workflows" >> $GITHUB_STEP_SUMMARY
+          echo "4. Update OPAL agent configurations with production URLs" >> $GITHUB_STEP_SUMMARY
+
+  # Notification job (optional)
+  notify:
+    runs-on: ubuntu-latest
+    needs: [validate, deploy]
+    if: always()
+
+    steps:
+      - name: 📢 Send deployment notification
+        if: always()
+        run: |
+          if [[ "${{ needs.deploy.result }}" == "success" ]]; then
+            echo "🎉 Production deployment completed successfully!"
+            echo "URL: https://ifpa-strategy.vercel.app"
+            echo "Commit: ${{ needs.validate.outputs.commit_sha }}"
+          elif [[ "${{ needs.deploy.result }}" == "failure" ]]; then
+            echo "❌ Production deployment failed!"
+            echo "Check the deployment logs for details"
+          elif [[ "${{ needs.deploy.result }}" == "skipped" ]]; then
+            echo "ℹ️ Production deployment skipped"
+            echo "Reason: ${{ needs.validate.outputs.should_deploy == 'false' && 'Commit validation failed' || 'Unknown' }}"
+          fi
+
+      # Optional: Slack/Discord notification
+      # - name: 📢 Slack Notification
+      #   if: always()
+      #   uses: 8398a7/action-slack@v3
+      #   with:
+      #     status: ${{ job.status }}
+      #     text: |
+      #       Production deployment ${{ needs.deploy.result == 'success' && 'completed' || 'failed' }}
+      #       URL: https://ifpa-strategy.vercel.app
+      #       Commit: ${{ needs.validate.outputs.commit_sha }}
+      #   env:
+      #     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

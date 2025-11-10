@@ -12,12 +12,12 @@ import PasswordProtection from '@/components/PasswordProtection';
 import ForceSyncButton from '@/components/ForceSyncButton';
 import { OSAWorkflowOutput } from '@/lib/types/maturity';
 import {
-  Sparkles,
   CheckCircle,
   ArrowRight,
   ArrowLeft
 } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
 export default function EnginePage() {
@@ -89,8 +89,14 @@ export default function EnginePage() {
                     Back to Home
                   </Button>
                 </Link>
-                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg p-3">
-                  <Sparkles className="h-6 w-6" />
+                <div id="logo-icon" className="rounded-lg p-3">
+                  <Image
+                    src="/images/gradient-orb.png"
+                    alt="Optimizely Strategy Assistant"
+                    width={24}
+                    height={24}
+                    className="rounded-full"
+                  />
                 </div>
                 <div>
                   <h1 className="text-xl font-bold">Strategy Results</h1>
@@ -185,8 +191,14 @@ export default function EnginePage() {
         <div className="container mx-auto px-4 py-6">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-4">
-              <Link href="/" className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg p-3 hover:from-blue-700 hover:to-indigo-700 transition-colors">
-                <Sparkles className="h-8 w-8" />
+              <Link href="/" id="logo-icon-header" className="rounded-lg p-3">
+                <Image
+                  src="/images/gradient-orb.png"
+                  alt="Optimizely Strategy Assistant"
+                  width={32}
+                  height={32}
+                  className="rounded-full"
+                />
               </Link>
               <div>
                 <h1 className="text-2xl font-bold">Opal Strategy Engine</h1>

@@ -11,13 +11,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
-import { Calendar, Settings, Database, Users, TrendingUp, AlertCircle, Save, RefreshCw, Webhook, Activity, CheckCircle, XCircle, TestTube, Key, Sparkles, BarChart, Map, FileText, Cog, Layers } from 'lucide-react';
+import { Calendar, Settings, Database, Users, TrendingUp, AlertCircle, Save, RefreshCw, Webhook, Activity, CheckCircle, XCircle, TestTube, Key, BarChart, Map, FileText, Cog, Layers } from 'lucide-react';
 import ForceSyncButton from '@/components/ForceSyncButton';
 import LoadingAnimation, { LoadingPresets } from '@/components/LoadingAnimation';
 import OpalWorkflowManager from '@/components/OpalWorkflowManager';
 import { ServiceStatusProvider, useServiceErrorListener } from '@/components/ServiceStatusProvider';
 import ServiceStatusFooter from '@/components/ServiceStatusFooter';
+import EnhancedOpalMonitoringDashboard from '@/components/EnhancedOpalMonitoringDashboard';
 import Link from 'next/link';
+import Image from 'next/image';
 
 // Mock OPAL mapping data for demonstration - In production, this would be loaded from the OPAL configuration API
 const opalMappingData = {
@@ -736,8 +738,14 @@ function AdminPageContent() {
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-4">
               <Link href="/">
-                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg p-3 cursor-pointer hover:shadow-lg transition-shadow">
-                  <Sparkles className="h-6 w-6" />
+                <div className="rounded-lg p-3 cursor-pointer hover:shadow-lg transition-shadow">
+                  <Image
+                    src="/images/gradient-orb.png"
+                    alt="Optimizely Strategy Assistant"
+                    width={24}
+                    height={24}
+                    className="rounded-full"
+                  />
                 </div>
               </Link>
               <div>
@@ -802,13 +810,27 @@ function AdminPageContent() {
           </Card>
         )}
 
-        <Tabs defaultValue="strategy-ai" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+        <Tabs defaultValue="opal-monitoring" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="opal-monitoring">OPAL Monitoring</TabsTrigger>
             <TabsTrigger value="strategy-ai">Strategy AI</TabsTrigger>
             <TabsTrigger value="configurations">Configurations</TabsTrigger>
             <TabsTrigger value="data-mapping">Data Mapping</TabsTrigger>
             <TabsTrigger value="recommendation-engine">Recommendation Engine</TabsTrigger>
           </TabsList>
+
+          {/* OPAL Monitoring Tab */}
+          <TabsContent value="opal-monitoring" className="space-y-6">
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-2xl font-bold mb-4">OPAL Monitoring Dashboard</h2>
+                <p className="text-gray-600 mb-6">
+                  Real-time monitoring and analytics for OPAL agents, workflows, and integrations
+                </p>
+              </div>
+              <EnhancedOpalMonitoringDashboard />
+            </div>
+          </TabsContent>
 
           {/* Strategy AI Tab */}
           <TabsContent value="strategy-ai" className="space-y-6">
@@ -1976,7 +1998,13 @@ function AdminPageContent() {
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
-                        <Sparkles className="w-5 h-5 text-blue-600" />
+                        <Image
+                          src="/images/gradient-orb.png"
+                          alt="Optimizely Strategy Assistant"
+                          width={20}
+                          height={20}
+                          className="rounded-full"
+                        />
                         Personalization Opportunities
                       </CardTitle>
                     </CardHeader>
@@ -2191,7 +2219,13 @@ function AdminPageContent() {
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
-                        <Sparkles className="w-5 h-5 text-purple-600" />
+                        <Image
+                          src="/images/gradient-orb.png"
+                          alt="Optimizely Strategy Assistant"
+                          width={20}
+                          height={20}
+                          className="rounded-full"
+                        />
                         Model Optimization
                       </CardTitle>
                     </CardHeader>

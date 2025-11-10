@@ -1,0 +1,240 @@
+name: Security Validation
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  security-validation:
+    name: Security Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Create minimal environment for validation
+        run: |
+          cat > .env.local << EOF
+          # Minimal environment for security validation
+          NODE_ENV=production
+          NEXT_PUBLIC_APP_URL=https://ifpa-strategy.vercel.app
+          NEXT_PUBLIC_BASE_URL=https://ifpa-strategy.vercel.app
+          OPAL_WEBHOOK_AUTH_KEY=secure-32-character-minimum-token-for-validation
+          SUPABASE_URL=https://example.supabase.co
+          SUPABASE_ANON_KEY=example-anon-key-for-validation-testing
+          SUPABASE_SERVICE_ROLE_KEY=example-service-role-key-for-validation
+          API_SECRET_KEY=secure-api-secret-key-for-validation-testing
+          JWT_SECRET=secure-jwt-secret-32-character-minimum-required-for-validation
+          EOF
+
+      - name: Run security validation
+        run: npm run validate:security
+
+      - name: Run TypeScript compilation check
+        run: npx tsc --noEmit
+
+      - name: Run linting
+        run: npm run lint
+
+      - name: Check for security vulnerabilities in dependencies
+        run: npm audit --audit-level moderate
+
+      - name: Validate Next.js build
+        run: npm run build
+
+      - name: Upload security validation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-validation-report
+          path: |
+            .next/
+            security-report.json
+          retention-days: 7
+
+  dependency-security:
+    name: Dependency Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run npm audit
+        run: npm audit --audit-level high
+
+      - name: Check for known vulnerabilities
+        run: |
+          # Check for common vulnerable patterns
+          echo "Checking for common security anti-patterns..."
+
+          # Check for hardcoded secrets (basic patterns)
+          if grep -r "password\s*=\s*['\"][^'\"]*['\"]" src/ --exclude-dir=node_modules || \
+             grep -r "secret\s*=\s*['\"][^'\"]*['\"]" src/ --exclude-dir=node_modules || \
+             grep -r "api.*key\s*=\s*['\"][^'\"]*['\"]" src/ --exclude-dir=node_modules; then
+            echo "❌ Potential hardcoded secrets found!"
+            exit 1
+          else
+            echo "✅ No obvious hardcoded secrets found"
+          fi
+
+          # Check for dangerous eval usage
+          if grep -r "eval\s*(" src/ --exclude-dir=node_modules; then
+            echo "❌ Dangerous eval() usage found!"
+            exit 1
+          else
+            echo "✅ No dangerous eval() usage found"
+          fi
+
+          # Check for console.log in production files
+          if grep -r "console\.log" src/ --exclude-dir=node_modules --exclude="*.test.*" --exclude="*.spec.*"; then
+            echo "⚠️ Console.log statements found in production code"
+          else
+            echo "✅ No console.log statements in production code"
+          fi
+
+  environment-validation:
+    name: Environment Configuration Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate environment templates
+        run: |
+          echo "Validating environment configuration templates..."
+
+          # Check that .env.local.example exists and contains required variables
+          if [ ! -f ".env.local.example" ]; then
+            echo "❌ .env.local.example template missing!"
+            exit 1
+          fi
+
+          # Check for required environment variables in template
+          required_vars=(
+            "OPAL_WEBHOOK_AUTH_KEY"
+            "SUPABASE_URL"
+            "SUPABASE_ANON_KEY"
+            "SUPABASE_SERVICE_ROLE_KEY"
+            "API_SECRET_KEY"
+            "JWT_SECRET"
+          )
+
+          for var in "${required_vars[@]}"; do
+            if ! grep -q "^${var}=" .env.local.example; then
+              echo "❌ Required variable ${var} missing from .env.local.example"
+              exit 1
+            else
+              echo "✅ ${var} found in template"
+            fi
+          done
+
+      - name: Validate .gitignore security
+        run: |
+          echo "Validating .gitignore security configuration..."
+
+          # Check that sensitive files are ignored
+          sensitive_files=(
+            ".env.local"
+            ".env.production"
+            "*.pem"
+            "*.key"
+          )
+
+          for file in "${sensitive_files[@]}"; do
+            if ! grep -q "^${file}$" .gitignore && ! grep -q "^${file//\*/\\*}$" .gitignore; then
+              echo "❌ Sensitive file pattern ${file} not in .gitignore"
+              exit 1
+            else
+              echo "✅ ${file} properly ignored"
+            fi
+          done
+
+  production-readiness:
+    name: Production Readiness Check
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Create production-like environment
+        run: |
+          cat > .env.local << EOF
+          NODE_ENV=production
+          NEXT_PUBLIC_APP_URL=https://ifpa-strategy.vercel.app
+          NEXT_PUBLIC_BASE_URL=https://ifpa-strategy.vercel.app
+          OPAL_WEBHOOK_AUTH_KEY=production-grade-webhook-auth-key-32-chars-minimum
+          SUPABASE_URL=https://production.supabase.co
+          SUPABASE_ANON_KEY=production-anon-key-would-be-here
+          SUPABASE_SERVICE_ROLE_KEY=production-service-role-key-would-be-here
+          API_SECRET_KEY=production-api-secret-key-secure
+          JWT_SECRET=production-jwt-secret-32-character-minimum-required-secure
+          OPAL_WEBHOOK_HMAC_SECRET=production-hmac-secret-32-character-minimum-required
+          EOF
+
+      - name: Validate production build
+        run: |
+          echo "Building for production..."
+          npm run build
+
+          # Check build output for security issues
+          if [ -d ".next" ]; then
+            echo "✅ Production build successful"
+
+            # Check for source maps in production (should be disabled)
+            if find .next -name "*.map" | grep -q .; then
+              echo "⚠️ Source maps found in production build"
+            else
+              echo "✅ No source maps in production build"
+            fi
+
+            # Check bundle size (basic check)
+            build_size=$(du -sh .next | cut -f1)
+            echo "📊 Build size: $build_size"
+          else
+            echo "❌ Production build failed"
+            exit 1
+          fi
+
+      - name: Test security validation in production mode
+        run: |
+          NODE_ENV=production npm run validate:security
+
+      - name: Validate OPAL integration endpoints
+        run: |
+          echo "Validating OPAL integration endpoints..."
+          npm run validate:opal || echo "⚠️ OPAL validation failed (may be expected in CI)"

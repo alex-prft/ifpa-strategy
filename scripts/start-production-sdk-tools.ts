@@ -172,7 +172,7 @@ async function startProductionSDKTools() {
     const basicServicePath = await createBasicSDKService();
 
     try {
-      execSync(\`node "\${basicServicePath}"\`, { stdio: 'inherit' });
+      execSync(`node "${basicServicePath}"`, { stdio: 'inherit' });
     } catch (error) {
       console.error('❌ [Fallback Mode] Basic service failed:', error);
       process.exit(1);
@@ -184,21 +184,21 @@ async function startProductionSDKTools() {
   const compilationStrategies = [
     {
       name: 'tsx-with-loader',
-      command: \`npx tsx --loader ts-node/esm scripts/start-production-sdk-tools.ts\`
+      command: `npx tsx --loader ts-node/esm scripts/start-production-sdk-tools.ts`
     },
     {
       name: 'ts-node-esm',
-      command: \`npx ts-node --esm --project tsconfig.sdk.json src/lib/opal/production-ready-sdk-tools.ts\`
+      command: `npx ts-node --esm --project tsconfig.sdk.json src/lib/opal/production-ready-sdk-tools.ts`
     },
     {
       name: 'typescript-compile',
-      command: \`npx tsc --project tsconfig.sdk.json && node dist/production-ready-sdk-tools.js\`
+      command: `npx tsc --project tsconfig.sdk.json && node dist/production-ready-sdk-tools.js`
     }
   ];
 
   for (const strategy of compilationStrategies) {
     try {
-      console.log(\`🔄 [Strategy] Trying \${strategy.name}...\`);
+      console.log(`🔄 [Strategy] Trying ${strategy.name}...`);
 
       if (strategy.name === 'typescript-compile') {
         // First compile
@@ -208,7 +208,7 @@ async function startProductionSDKTools() {
         // Then run
         const distPath = join(process.cwd(), 'dist', 'src', 'lib', 'opal', 'production-ready-sdk-tools.js');
         if (existsSync(distPath)) {
-          execSync(\`node "\${distPath}"\`, { stdio: 'inherit' });
+          execSync(`node "${distPath}"`, { stdio: 'inherit' });
         } else {
           throw new Error('Compiled file not found');
         }

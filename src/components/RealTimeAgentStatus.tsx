@@ -147,6 +147,40 @@ export default function RealTimeAgentStatus({ className }: RealTimeAgentStatusPr
     'personalization_idea_generator'
   ];
 
+  // Local agent configuration to avoid accessing static property through instance
+  const OPAL_AGENTS = {
+    'content_review': {
+      name: 'Content Review Agent',
+      description: 'Analyzes experiment content and variations',
+      estimated_runtime_ms: 45000,
+      timeout_threshold_ms: 120000
+    },
+    'geo_audit': {
+      name: 'Geographic Audit Agent',
+      description: 'Evaluates geographic performance distribution',
+      estimated_runtime_ms: 60000,
+      timeout_threshold_ms: 180000
+    },
+    'audience_suggester': {
+      name: 'Audience Suggester Agent',
+      description: 'Analyzes audience segment performance',
+      estimated_runtime_ms: 50000,
+      timeout_threshold_ms: 150000
+    },
+    'experiment_blueprinter': {
+      name: 'Experiment Blueprinter Agent',
+      description: 'Creates detailed experiment plans',
+      estimated_runtime_ms: 70000,
+      timeout_threshold_ms: 200000
+    },
+    'personalization_idea_generator': {
+      name: 'Personalization Idea Generator',
+      description: 'Generates personalization strategies',
+      estimated_runtime_ms: 55000,
+      timeout_threshold_ms: 180000
+    }
+  };
+
   return (
     <div className={className}>
       <div className="text-xs text-muted-foreground mb-1 flex items-center justify-between">
@@ -158,7 +192,7 @@ export default function RealTimeAgentStatus({ className }: RealTimeAgentStatusPr
       <div className="flex items-center gap-1.5 flex-wrap">
         {opalAgents.map(agentId => {
           const agentInfo = agentStatuses.get(agentId);
-          const agentConfig = agentStatusTracker.OPAL_AGENTS[agentId as keyof typeof agentStatusTracker.OPAL_AGENTS];
+          const agentConfig = OPAL_AGENTS[agentId as keyof typeof OPAL_AGENTS];
 
           return (
             <AgentStatusBubble

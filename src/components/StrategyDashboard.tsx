@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 // Speech Recognition API declarations
 declare global {
@@ -16,6 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { OSAWorkflowOutput } from '@/lib/types/maturity';
@@ -98,6 +100,7 @@ const navigationAreas = [
     title: 'Strategy Plans',
     icon: Target,
     color: 'blue',
+    url: '/engine/results/strategy',
     tabs: [
       { id: 'osa', title: 'OSA', description: 'AI-powered insights, highlights, and recommendations' },
       { id: 'overview', title: 'Quick Wins', description: 'Maturity Assessment Summary + KPIs' },
@@ -111,6 +114,7 @@ const navigationAreas = [
     title: 'Optimizely DXP Tools',
     icon: Settings,
     color: 'purple',
+    url: '/engine/results/dxptools',
     tabs: [
       { id: 'content-recommendations', title: 'Content Recs', description: 'Cards with priority scores' },
       { id: 'cms', title: 'CMS', description: 'Content Management insights' },
@@ -124,6 +128,7 @@ const navigationAreas = [
     title: 'Analytics Insights',
     icon: BarChart3,
     color: 'green',
+    url: '/engine/results/insights',
     tabs: [
       { id: 'osa', title: 'OSA', description: 'AI-powered analytics insights and recommendations' },
       { id: 'content', title: 'Content', description: 'Performance charts' },
@@ -137,6 +142,7 @@ const navigationAreas = [
     title: 'Experience Optimization',
     icon: TrendingUp,
     color: 'orange',
+    url: '/engine/results/optimization',
     tabs: [
       { id: 'content-opt', title: 'Content', description: 'Content optimization strategies' },
       { id: 'experimentation', title: 'Experimentation', description: 'Testing frameworks' },
@@ -169,17 +175,17 @@ type AgentStatus = 'default' | 'active' | 'error';
 
 // Mock agent status function - in production this would connect to real agent monitoring
 function getAgentStatus(agentId: string): AgentStatus {
-  // Simulate different states for demonstration
+  // Realistic states - most agents are not connected/sending data yet
   const statusMap: Record<string, AgentStatus> = {
-    'roadmap_generator': 'active',
-    'integration_health': 'active',
+    'roadmap_generator': 'default',
+    'integration_health': 'default',
     'personalization_idea_generator': 'default',
-    'cmp_organizer': 'error',
-    'experiment_blueprinter': 'active',
+    'cmp_organizer': 'default',
+    'experiment_blueprinter': 'default',
     'customer_journey': 'default',
     'audience_suggester': 'default',
-    'geo_audit': 'error',
-    'content_review': 'active'
+    'geo_audit': 'default',
+    'content_review': 'default'
   };
 
   return statusMap[agentId] || 'default';
@@ -230,6 +236,7 @@ export default function StrategyDashboard({ workflowResult }: StrategyDashboardP
   const [dataFreshness, setDataFreshness] = useState<'fresh' | 'stale' | 'old'>('fresh');
   const [ttydQuestion, setTtydQuestion] = useState('');
 
+  const [showComingSoonModal, setShowComingSoonModal] = useState(false);
   // Initialize analytics and recommendation systems
   const analytics = useAnalytics({
     userId: 'demo-user', // In production, get from auth context
@@ -361,8 +368,14 @@ export default function StrategyDashboard({ workflowResult }: StrategyDashboardP
           {/* Header */}
           <div id="sidebar-header" className="p-6 border-b">
             <div id="branding" className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg">
-                <Sparkles className="h-6 w-6 text-white" />
+              <div className="rounded-lg">
+                <Image
+                  src="/images/gradient-orb.png"
+                  alt="Opal AI"
+                  width={40}
+                  height={40}
+                  className="rounded-lg"
+                />
               </div>
               <div>
                 <h1 className="text-lg font-bold">Opal AI</h1>
@@ -371,7 +384,7 @@ export default function StrategyDashboard({ workflowResult }: StrategyDashboardP
             </div>
 
             {/* Recent Data Accordion */}
-            <Accordion type="single" collapsible defaultValue="recent-data" className="bg-slate-50 rounded-lg">
+            <Accordion id="recent-data" type="single" collapsible defaultValue="recent-data" className="bg-slate-50 rounded-lg">
               <AccordionItem value="recent-data" className="border-none">
                 <AccordionTrigger className="p-3 pb-2 hover:no-underline">
                   <div className="flex items-center justify-between w-full">
@@ -501,7 +514,7 @@ export default function StrategyDashboard({ workflowResult }: StrategyDashboardP
                 return (
                   <button
                     key={area.id}
-                    onClick={() => handleAreaChange(area.id)}
+                    onClick={() => router.push(area.url)}
                     className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all ${
                       isActive
                         ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
@@ -779,6 +792,7 @@ export default function StrategyDashboard({ workflowResult }: StrategyDashboardP
                 question={ttydQuestion}
                 onQuestionChange={setTtydQuestion}
                 onClose={() => setShowTTYD(false)}
+                onShowComingSoonModal={() => setShowComingSoonModal(true)}
               />
             ) : (
               <>
@@ -806,6 +820,41 @@ export default function StrategyDashboard({ workflowResult }: StrategyDashboardP
           </div>
         </div>
       </div>
+
+      {/* Coming Soon Modal */}
+      <Dialog open={showComingSoonModal} onOpenChange={setShowComingSoonModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-center">Coming Soon</DialogTitle>
+            <DialogDescription className="text-center">
+              This feature is currently in development and will be available soon.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col items-center space-y-4 py-4">
+            <div className="text-4xl">🚀</div>
+            <p className="text-sm text-muted-foreground text-center">
+              We're working hard to bring you advanced AI-powered question answering capabilities.
+            </p>
+          </div>
+          <DialogFooter className="flex-col sm:flex-col space-y-2">
+            <Button
+              onClick={() => {
+                setShowComingSoonModal(false);
+                // Navigate to Strategy Plans section
+                router.push('/engine/results/strategy');
+              }}
+              className="w-full bg-blue-600 hover:bg-blue-700"
+            >
+              View Your Strategy Results
+            </Button>
+            <DialogClose asChild>
+              <Button variant="outline" className="w-full">
+                Close
+              </Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -14128,9 +14177,10 @@ interface TTYDContentProps {
   question: string;
   onQuestionChange: (question: string) => void;
   onClose: () => void;
+  onShowComingSoonModal: () => void;
 }
 
-function TTYDContent({ question, onQuestionChange, onClose }: TTYDContentProps) {
+function TTYDContent({ question, onQuestionChange, onClose, onShowComingSoonModal }: TTYDContentProps) {
   const [isListening, setIsListening] = useState(false);
 
   const handlePrebuiltPrompt = (prompt: string) => {
@@ -14140,7 +14190,7 @@ function TTYDContent({ question, onQuestionChange, onClose }: TTYDContentProps) 
   const handleQuestionSubmit = () => {
     if (!question.trim()) return;
     console.log('TTYD: Processing question:', question);
-    // TODO: Implement actual question processing
+    onShowComingSoonModal();
   };
 
   const handleVoiceActivation = () => {

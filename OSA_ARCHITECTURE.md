@@ -1,5 +1,27 @@
 # OSA (Optimizely Strategy Assistant) - Technical Architecture Documentation
 
+## Main Services Overview
+
+OSA consists of **seven core microservices** that work together to provide AI-powered optimization strategy recommendations:
+
+### 🔴 Core Services (P0 - Mandatory)
+- **Ingestion & Orchestration Service** (`Opal Connector`) - OPAL workflow orchestration, webhook handling, and data ingestion from Optimizely platform
+- **Recommendation Service** (`Decision Layer`) - Central AI intelligence engine that synthesizes data to generate personalized strategic recommendations
+- **Knowledge & Retrieval Service** (`RAG Brain`) - Foundation knowledge layer with vector storage, semantic search, and continuous learning from all interactions
+
+### 🟡 Enhanced Services (P1 - High Priority)
+- **Strategy Intake Service** (`Engine Form`) - Business context collection, form validation, and user requirement gathering for enhanced recommendations
+- **Preferences & Policy Service** (`Personal Configurator`) - User preference management, policy enforcement, and configuration constraints
+- **UX Design Service** (`Artist`) - Frontend experience layer, component library, data visualization, and responsive design systems
+
+### 🟢 Future Services (P2 - Optional)
+- **Conversational Analytics Service** (`TTYD - Talk To Your Data`) - Natural language querying interface for interactive data exploration
+
+### 🌐 Platform Services (P0 - Infrastructure)
+- **API Gateway** - Authentication, rate limiting, request routing, and circuit breakers
+- **Event Bus** - Asynchronous message routing and event streaming between services
+- **Monitoring Service** - Health checks, metrics collection, distributed tracing, and alerting
+
 ## Table of Contents
 1. [System Overview](#system-overview)
 2. [Ingestion & Orchestration Service](#ingestion--orchestration-service)

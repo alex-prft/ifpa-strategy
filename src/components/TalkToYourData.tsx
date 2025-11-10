@@ -6,6 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import {
   MessageSquare,
   Sparkles,
   Users,
@@ -18,6 +26,8 @@ import {
   Award
 } from 'lucide-react';
 import { OSAWorkflowOutput } from '@/lib/types/maturity';
+import Link from 'next/link';
+import EngineActionsSummary from '@/components/EngineActionsSummary';
 
 interface TTYDProps {
   workflowResult?: OSAWorkflowOutput;
@@ -26,16 +36,13 @@ interface TTYDProps {
 export default function TalkToYourData({ workflowResult }: TTYDProps) {
   const [question, setQuestion] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showModal, setShowModal] = useState(false);
 
   const handleTTYDQuestionSubmit = async () => {
     if (!question.trim()) return;
 
-    setIsLoading(true);
-    // TODO: Implement actual TTYD question processing
-    console.log('TTYD: Processing question:', question);
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 2000);
+    // Show the "Coming Soon" modal instead of processing
+    setShowModal(true);
   };
 
   const handlePrebuiltPrompt = (prompt: string) => {
@@ -204,7 +211,41 @@ export default function TalkToYourData({ workflowResult }: TTYDProps) {
             </Card>
           ))}
         </div>
+
+        {/* Engine Actions & Summary */}
+        <EngineActionsSummary areaId="analytics-insights" subSectionId="osa" />
       </div>
+
+      {/* Coming Soon Modal */}
+      <Dialog open={showModal} onOpenChange={setShowModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-center">Coming Soon</DialogTitle>
+            <DialogDescription className="text-center py-4">
+              The Talk To Your Data feature is currently in development and will be available soon!
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex flex-col space-y-2 sm:space-y-0 sm:space-x-2">
+            <Link href="/engine/results/strategy" className="w-full">
+              <Button
+                variant="default"
+                className="w-full bg-blue-600 hover:bg-blue-700"
+                onClick={() => setShowModal(false)}
+              >
+                <Target className="mr-2 h-4 w-4" />
+                View Strategy Plans
+              </Button>
+            </Link>
+            <Button
+              variant="outline"
+              onClick={() => setShowModal(false)}
+              className="w-full"
+            >
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

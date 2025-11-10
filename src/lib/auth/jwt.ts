@@ -4,9 +4,38 @@
 
 import { SignJWT, jwtVerify, type JWTPayload } from 'jose';
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'fallback-secret-for-development-only-change-in-production'
-);
+// Validate JWT_SECRET is properly configured
+function getJWTSecret(): Uint8Array {
+  const secret = process.env.JWT_SECRET;
+
+  if (!secret) {
+    throw new Error('JWT_SECRET environment variable is required');
+  }
+
+  if (secret.length < 32) {
+    throw new Error('JWT_SECRET must be at least 32 characters long');
+  }
+
+  // Warn about potentially weak secrets
+  const weakSecrets = [
+    'fallback-secret-for-development-only-change-in-production',
+    'your-jwt-secret-key',
+    'secret',
+    'password',
+    'development'
+  ];
+
+  if (weakSecrets.includes(secret.toLowerCase())) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Weak JWT_SECRET detected in production environment');
+    }
+    console.warn('⚠️  Warning: Using weak JWT_SECRET. Generate a strong secret for production.');
+  }
+
+  return new TextEncoder().encode(secret);
+}
+
+const JWT_SECRET = getJWTSecret();
 
 const JWT_ISSUER = 'osa-api-gateway';
 const JWT_AUDIENCE = 'osa-services';

@@ -5,7 +5,8 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import LoadingResultsPage from '@/components/LoadingResultsPage';
 import PasswordProtection from '@/components/PasswordProtection';
-import StrategyDashboard from '@/components/StrategyDashboard';
+import ResultsSidebar from '@/components/ResultsSidebar';
+import TalkToYourData from '@/components/TalkToYourData';
 import { ServiceStatusProvider, useServiceErrorListener } from '@/components/ServiceStatusProvider';
 import ServiceStatusFooter from '@/components/ServiceStatusFooter';
 import { OSAWorkflowOutput } from '@/lib/types/maturity';
@@ -14,9 +15,11 @@ import {
   CheckCircle,
   ArrowRight,
   ArrowLeft,
-  Settings
+  Settings,
+  MessageSquare
 } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 function ResultsPageContent() {
   const [workflowResult, setWorkflowResult] = useState<OSAWorkflowOutput | null>(null);
@@ -80,57 +83,61 @@ function ResultsPageContent() {
 
   if (!workflowResult) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
-        {/* Header */}
-        <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
-          <div className="container mx-auto px-4 py-4">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center space-x-4">
-                <Link href="/">
-                  <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg p-3 cursor-pointer hover:shadow-lg transition-shadow">
-                    <Sparkles className="h-6 w-6" />
-                  </div>
-                </Link>
-                <div>
-                  <h1 className="text-xl font-bold">Strategy Results</h1>
-                  <p className="text-muted-foreground text-sm">Opal Assistant for IFPA</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </header>
+      <div id="no-results-page-container" className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+        <div id="no-results-page-layout" className="flex">
+          {/* Sidebar Navigation */}
+          <ResultsSidebar />
 
-        {/* No Results Message */}
-        <main className="container mx-auto px-4 py-16 text-center">
-          <Card className="max-w-md mx-auto">
-            <CardContent className="pt-6">
-              <div className="space-y-4">
-                <div className="mx-auto w-16 h-16 bg-muted rounded-full flex items-center justify-center">
-                  <Sparkles className="h-8 w-8 text-muted-foreground" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold mb-2">No Results Found</h3>
-                  <p className="text-muted-foreground mb-6">
-                    It looks like you haven't generated a strategy yet. Let's create one!
-                  </p>
-                  <Link href="/engine">
-                    <Button className="gap-2">
-                      <Sparkles className="h-4 w-4" />
-                      Generate Strategy
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </main>
+          {/* Main Content */}
+          <main id="no-results-main-content" className="flex-1 bg-gradient-to-br from-slate-50 via-white to-slate-100 p-8">
+            <div id="no-results-centered-content" className="flex items-center justify-center min-h-[80vh]">
+              <Card id="no-results-card" className="max-w-md mx-auto">
+                <CardContent className="pt-6">
+                  <div id="no-results-content" className="space-y-4">
+                    <div id="no-results-icon" className="mx-auto w-16 h-16 bg-muted rounded-full flex items-center justify-center">
+                      <Image
+                        src="/images/gradient-orb.png"
+                        alt="Opal AI"
+                        width={32}
+                        height={32}
+                        className="rounded-lg"
+                      />
+                    </div>
+                    <div id="no-results-text">
+                      <h3 className="text-lg font-semibold mb-2">No Results Found</h3>
+                      <p className="text-muted-foreground mb-6">
+                        It looks like you haven't generated a strategy yet. Let's create one!
+                      </p>
+                      <Link href="/engine">
+                        <Button id="generate-strategy-btn" className="gap-2">
+                          <MessageSquare className="h-4 w-4" />
+                          Generate Strategy
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </main>
+        </div>
       </div>
     );
   }
 
   return (
     <>
-      <StrategyDashboard workflowResult={workflowResult} />
+      <div id="results-page-container" className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+        <div id="results-page-layout" className="flex">
+          {/* Sidebar Navigation */}
+          <ResultsSidebar />
+
+          {/* Main Content - TTYD Interface */}
+          <main id="results-main-content" className="flex-1 bg-gradient-to-br from-slate-50 via-white to-slate-100">
+            <TalkToYourData workflowResult={workflowResult} />
+          </main>
+        </div>
+      </div>
       <ServiceStatusFooter />
     </>
   );

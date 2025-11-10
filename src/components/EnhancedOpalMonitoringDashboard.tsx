@@ -338,7 +338,38 @@ export default function EnhancedOpalMonitoringDashboard({ className }: EnhancedO
             <CardContent>
               <RealTimeAgentStatus className="scale-150 origin-top-left" />
               <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {Object.entries(agentStatusTracker.OPAL_AGENTS).map(([agentId, config]) => (
+                {Object.entries({
+                  'content_review': {
+                    name: 'Content Review Agent',
+                    description: 'Analyzes experiment content and variations',
+                    estimated_runtime_ms: 45000,
+                    timeout_threshold_ms: 120000
+                  },
+                  'geo_audit': {
+                    name: 'Geographic Audit Agent',
+                    description: 'Evaluates geographic performance distribution',
+                    estimated_runtime_ms: 60000,
+                    timeout_threshold_ms: 180000
+                  },
+                  'audience_suggester': {
+                    name: 'Audience Suggester Agent',
+                    description: 'Analyzes audience segment performance',
+                    estimated_runtime_ms: 50000,
+                    timeout_threshold_ms: 150000
+                  },
+                  'experiment_blueprinter': {
+                    name: 'Experiment Blueprinter Agent',
+                    description: 'Creates detailed experiment plans',
+                    estimated_runtime_ms: 70000,
+                    timeout_threshold_ms: 200000
+                  },
+                  'personalization_idea_generator': {
+                    name: 'Personalization Idea Generator',
+                    description: 'Generates personalization strategies',
+                    estimated_runtime_ms: 55000,
+                    timeout_threshold_ms: 180000
+                  }
+                }).map(([agentId, config]) => (
                   <Card key={agentId} className="border-l-4 border-l-blue-500">
                     <CardContent className="p-4">
                       <h4 className="font-semibold text-sm">{config.name}</h4>

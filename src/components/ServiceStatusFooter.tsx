@@ -163,6 +163,7 @@ export default function ServiceStatusFooter() {
                 />
               )}
 
+
               {/* Logout button for authenticated users */}
               {isAuthenticated && (
                 <Button

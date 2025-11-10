@@ -76,7 +76,8 @@ const REQUIRED_ENV_VARS = [
   'SUPABASE_URL',
   'SUPABASE_ANON_KEY',
   'SUPABASE_SERVICE_ROLE_KEY',
-  'API_SECRET_KEY'
+  'API_SECRET_KEY',
+  'JWT_SECRET'
 ] as const;
 
 /**
@@ -173,6 +174,28 @@ function validateSpecificVariables(errors: string[], warnings: string[]): void {
     }
     if (apiSecret === 'your-secret-key-for-tool-authentication') {
       errors.push('API_SECRET_KEY is using example value - set a real secret');
+    }
+  }
+
+  // Validate JWT secret
+  const jwtSecret = process.env.JWT_SECRET;
+  if (jwtSecret) {
+    if (jwtSecret.length < 32) {
+      errors.push('JWT_SECRET must be at least 32 characters for security');
+    }
+    const weakJwtSecrets = [
+      'your-jwt-secret-key-minimum-32-characters-required',
+      'fallback-secret-for-development-only-change-in-production',
+      'secret',
+      'password',
+      'development'
+    ];
+    if (weakJwtSecrets.includes(jwtSecret.toLowerCase())) {
+      if (process.env.NODE_ENV === 'production') {
+        errors.push('JWT_SECRET is using weak/example value in production - generate a strong secret');
+      } else {
+        warnings.push('JWT_SECRET is using weak/example value - generate a strong secret for production');
+      }
     }
   }
 

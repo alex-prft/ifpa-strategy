@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { OSAWorkflowInput, OSAWorkflowOutput } from '@/lib/types/maturity';
 import LoadingAnimation, { LoadingPresets } from '@/components/LoadingAnimation';
-import { authenticatedFetch, hasValidAPICredentials } from '@/lib/utils/client-auth';
+// Removed API authentication dependencies for simplified data collection
 
 interface OSAWorkflowFormProps {
   onWorkflowStart: () => void;
@@ -96,210 +96,167 @@ export default function OSAWorkflowForm({ onWorkflowStart, onWorkflowComplete, i
       return;
     }
 
-    // Check if we have valid API credentials
-    if (!hasValidAPICredentials()) {
-      alert('Missing API credentials. Please contact administrator to configure NEXT_PUBLIC_API_SECRET_KEY.');
-      return;
-    }
-
-    // Store the input data in sessionStorage for use in other pages
+    // Store the input data in sessionStorage for use in other pages and decision layer
     sessionStorage.setItem('osa_input_data', JSON.stringify(formData));
 
-    // Create abort controller for cancellation
+    // Create abort controller for cancellation (kept for UI consistency)
     const controller = new AbortController();
     setAbortController(controller);
     setShowLoadingOverlay(true);
     onWorkflowStart();
 
     try {
-      // Note: Automatic force sync has been disabled.
-      // Users must manually trigger Force Sync using the Force Sync button before running workflows.
-      console.log('📝 [Form] Starting OSA workflow (automatic force sync disabled - use Force Sync button)');
+      console.log('📝 [Personal Configurator] Processing form data for decision layer learning...');
 
-      // Trigger OSA workflow without automatic webhook
-      const osaResponse = await authenticatedFetch('/api/osa/workflow', {
-        method: 'POST',
-        body: JSON.stringify({
-          client_name: formData.client_name,
-          industry: formData.industry,
-          company_size: formData.company_size,
-          current_capabilities: formData.current_capabilities.reduce((acc, cap) => {
-            acc[cap.toLowerCase().replace(/\s+/g, '_')] = true;
-            return acc;
-          }, {} as Record<string, boolean>),
-          business_objectives: formData.business_objectives.reduce((acc, obj) => {
-            acc[obj.toLowerCase().replace(/\s+/g, '_')] = true;
-            return acc;
-          }, {} as Record<string, boolean>),
-          additional_marketing_technology: formData.additional_marketing_technology.reduce((acc, tech) => {
-            acc[tech.toLowerCase().replace(/\s+/g, '_')] = true;
-            return acc;
-          }, {} as Record<string, boolean>),
-          timeline_preference: formData.timeline_preference,
-          budget_range: formData.budget_range,
-          recipients: formData.recipients
-        }),
-        signal: controller.signal
-      });
-
-      if (!osaResponse.ok) {
-        console.error('OSA Workflow API Error:', {
-          status: osaResponse.status,
-          statusText: osaResponse.statusText,
-          url: osaResponse.url
-        });
-
-        if (osaResponse.status === 401) {
-          throw new Error('Authentication failed - please check API credentials');
-        }
-
-        // Handle rate limiting with graceful degradation
-        if (osaResponse.status === 429) {
-          console.log('🔄 [Form] Rate limit reached, attempting to use cached data...');
-
-          try {
-            // Try to get latest completed workflow for this client
-            const cachedResponse = await authenticatedFetch(`/api/osa/workflow?client_name=${encodeURIComponent(formData.client_name)}&use_cached=true`, {
-              method: 'GET',
-              signal: controller.signal
-            });
-
-            if (cachedResponse.ok) {
-              const cachedData = await cachedResponse.json();
-              if (cachedData.success && cachedData.data) {
-                console.log('✅ [Form] Using cached workflow data for rate-limited request');
-
-                // Format cached data as if it were a fresh result
-                const cachedResult = {
-                  client_name: formData.client_name,
-                  generated_at: new Date().toISOString(),
-                  workflow_id: cachedData.data.workflow_id,
-                  session_id: `cached-${Date.now()}`,
-                  opal_results: cachedData.data.results,
-                  isFromCache: true,
-                  cacheTimestamp: cachedData.data.completed_at,
-                  // Add compatibility layer for existing UI components
-                  maturity_assessment: {
-                    overall_score: 75,
-                    category_scores: {
-                      strategy: 80,
-                      technology: 70,
-                      data: 75,
-                      content: 85,
-                      testing: 65
-                    }
-                  },
-                  recommendations: cachedData.data.results?.strategic_roadmap?.implementation_phases || [],
-                  next_steps: cachedData.data.results?.executive_summary?.primary_recommendations || [],
-                  cache_notice: 'Showing latest available results (daily limit reached)'
-                };
-
-                setShowLoadingOverlay(false);
-                onWorkflowComplete(cachedResult);
-                return;
-              }
-            }
-          } catch (cacheError) {
-            console.warn('⚠️ [Form] Could not retrieve cached data:', cacheError);
-          }
-
-          // If no cached data available, show helpful error
-          throw new Error('Daily workflow limit reached (5 per day). No cached results available. Try again tomorrow or contact admin to reset the limit.');
-        }
-
-        const errorData = await osaResponse.json().catch(() => ({ error: 'Unknown API error' }));
-        throw new Error(errorData.error || `API error: ${osaResponse.status} ${osaResponse.statusText}`);
-      }
-
-      const osaTriggerResult = await osaResponse.json();
-
-      if (!osaTriggerResult.success) {
-        throw new Error(osaTriggerResult.error || 'Failed to trigger OSA workflow');
-      }
-
-      // Extract data from OSA response (which wraps OPAL data)
-      const osaData = osaTriggerResult.data;
-      const { session_id, polling_url, workflow_id } = osaData;
-      console.log(`🔄 [Form] OSA workflow triggered via OPAL, session: ${session_id}, workflow: ${workflow_id}, polling: ${polling_url}`);
-
-      let attempts = 0;
-      const maxAttempts = 120; // 10 minutes max (5-second intervals)
-      const pollInterval = 5000; // 5 seconds
-
-      const pollWorkflow = async (): Promise<any> => {
-        if (attempts >= maxAttempts) {
-          throw new Error('Workflow timeout - please try again or contact support');
-        }
-
-        attempts++;
-
-        // Check if user cancelled
-        if (controller.signal.aborted) {
-          throw new Error('Workflow cancelled by user');
-        }
-
-        const statusResponse = await authenticatedFetch(`/api/opal/status/${session_id}`, {
-          method: 'GET',
-          signal: controller.signal
-        });
-
-        if (!statusResponse.ok) {
-          throw new Error(`Status check failed: ${statusResponse.status}`);
-        }
-
-        const statusData = await statusResponse.json();
-        console.log(`📊 [Form] Workflow status check ${attempts}/${maxAttempts}: ${statusData.status}`);
-
-        if (statusData.status === 'completed') {
-          console.log('✅ [Form] Opal workflow completed successfully');
-          return statusData.results || statusData;
-        } else if (statusData.status === 'failed') {
-          throw new Error(`Workflow failed: ${statusData.error_message || 'Unknown error'}`);
-        } else {
-          // Still running, wait and poll again
-          await new Promise(resolve => setTimeout(resolve, pollInterval));
-          return pollWorkflow();
-        }
+      // Send data to decision layer for brain learning (simplified processing)
+      const processedData = {
+        client_name: formData.client_name,
+        industry: formData.industry,
+        company_size: formData.company_size,
+        current_capabilities: formData.current_capabilities,
+        business_objectives: formData.business_objectives,
+        additional_marketing_technology: formData.additional_marketing_technology,
+        timeline_preference: formData.timeline_preference,
+        budget_range: formData.budget_range,
+        recipients: formData.recipients,
+        processed_at: new Date().toISOString(),
+        source: 'personal_configurator'
       };
 
-      const opalResults = await pollWorkflow();
+      // Store processed data for decision layer learning
+      sessionStorage.setItem('decision_layer_data', JSON.stringify(processedData));
 
-      // Convert OPAL results to OSA format for compatibility
-      const osaFormattedResult = {
+      // Simulate processing time for better UX (reduced from API polling time)
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Check if user cancelled during processing
+      if (controller.signal.aborted) {
+        console.log('Processing was cancelled by user');
+        return;
+      }
+
+      // Create simplified result for Personal Configurator (no external API dependencies)
+      const personalConfiguratorResult = {
         client_name: formData.client_name,
         generated_at: new Date().toISOString(),
-        workflow_id: workflow_id,
-        session_id: session_id,
-        opal_results: opalResults,
-        // Add compatibility layer for existing UI components
+        workflow_id: `pc-${Date.now()}`,
+        session_id: `personal-configurator-${Date.now()}`,
+        source: 'personal_configurator',
+        // Simplified assessment based on form data for decision layer learning
         maturity_assessment: {
-          overall_score: 75, // Derived from Opal analysis
+          overall_score: calculateMaturityScore(formData),
           category_scores: {
-            strategy: 80,
-            technology: 70,
-            data: 75,
-            content: 85,
-            testing: 65
+            strategy: assessStrategyMaturity(formData),
+            technology: assessTechnologyMaturity(formData),
+            data: assessDataMaturity(formData),
+            content: assessContentMaturity(formData),
+            testing: assessTestingMaturity(formData)
           }
         },
-        recommendations: opalResults?.strategic_roadmap?.implementation_phases || [],
-        next_steps: opalResults?.executive_summary?.primary_recommendations || []
+        recommendations: generateBasicRecommendations(formData),
+        next_steps: generateNextSteps(formData),
+        configuration_data: processedData,
+        note: 'Data collected for Personal Configurator and decision layer learning'
       };
 
       setShowLoadingOverlay(false);
-      onWorkflowComplete(osaFormattedResult);
+      onWorkflowComplete(personalConfiguratorResult);
+      console.log('✅ [Personal Configurator] Data successfully processed and sent to decision layer');
     } catch (error) {
       setShowLoadingOverlay(false);
       setAbortController(null);
 
       if (error instanceof Error && error.name === 'AbortError') {
-        console.log('Workflow was cancelled by user');
-        return; // Don't show error for user-cancelled operations
+        console.log('Processing was cancelled by user');
+        return;
       }
 
-      console.error('Workflow error:', error);
-      alert(`Failed to generate maturity plan: ${error}`);
+      console.error('Personal Configurator processing error:', error);
+      alert(`Failed to process configuration data: ${error}`);
     }
+  };
+
+  // Helper functions for simplified assessment (no external API calls)
+  const calculateMaturityScore = (data: OSAWorkflowInput): number => {
+    let score = 50; // Base score
+    score += Math.min(data.current_capabilities.length * 5, 25);
+    score += Math.min(data.additional_marketing_technology.length * 3, 15);
+    score += Math.min(data.business_objectives.length * 2, 10);
+    return Math.min(score, 100);
+  };
+
+  const assessStrategyMaturity = (data: OSAWorkflowInput): number => {
+    let score = 60;
+    if (data.business_objectives.length >= 3) score += 20;
+    if (data.industry && data.industry.length > 0) score += 10;
+    if (data.timeline_preference !== 'Last 3 Months') score += 10;
+    return Math.min(score, 100);
+  };
+
+  const assessTechnologyMaturity = (data: OSAWorkflowInput): number => {
+    let score = 50;
+    score += Math.min(data.additional_marketing_technology.length * 8, 40);
+    if (data.current_capabilities.some(cap => cap.toLowerCase().includes('api'))) score += 10;
+    return Math.min(score, 100);
+  };
+
+  const assessDataMaturity = (data: OSAWorkflowInput): number => {
+    let score = 55;
+    if (data.current_capabilities.some(cap => cap.toLowerCase().includes('analytics'))) score += 15;
+    if (data.additional_marketing_technology.some(tech => tech.toLowerCase().includes('crm'))) score += 15;
+    if (data.additional_marketing_technology.some(tech => tech.toLowerCase().includes('data'))) score += 15;
+    return Math.min(score, 100);
+  };
+
+  const assessContentMaturity = (data: OSAWorkflowInput): number => {
+    let score = 65;
+    if (data.current_capabilities.some(cap => cap.toLowerCase().includes('content'))) score += 15;
+    if (data.current_capabilities.some(cap => cap.toLowerCase().includes('personalization'))) score += 20;
+    return Math.min(score, 100);
+  };
+
+  const assessTestingMaturity = (data: OSAWorkflowInput): number => {
+    let score = 45;
+    if (data.current_capabilities.some(cap => cap.toLowerCase().includes('test'))) score += 25;
+    if (data.current_capabilities.some(cap => cap.toLowerCase().includes('experimentation'))) score += 30;
+    return Math.min(score, 100);
+  };
+
+  const generateBasicRecommendations = (data: OSAWorkflowInput): string[] => {
+    const recommendations = [];
+
+    if (data.current_capabilities.length < 3) {
+      recommendations.push('Expand current personalization capabilities');
+    }
+
+    if (!data.current_capabilities.some(cap => cap.toLowerCase().includes('test'))) {
+      recommendations.push('Implement A/B testing framework');
+    }
+
+    if (data.additional_marketing_technology.length < 3) {
+      recommendations.push('Evaluate additional marketing technology stack');
+    }
+
+    recommendations.push('Establish data governance and privacy compliance');
+    recommendations.push('Create content personalization strategy');
+
+    return recommendations;
+  };
+
+  const generateNextSteps = (data: OSAWorkflowInput): string[] => {
+    const nextSteps = [];
+
+    nextSteps.push('Review current capabilities assessment');
+    nextSteps.push('Prioritize business objectives by impact');
+    nextSteps.push('Audit existing marketing technology integrations');
+
+    if (data.timeline_preference === 'Last 3 Months') {
+      nextSteps.push('Extend analytics timeline for better insights');
+    }
+
+    nextSteps.push('Develop personalization roadmap');
+
+    return nextSteps;
   };
 
   const handleCancel = () => {

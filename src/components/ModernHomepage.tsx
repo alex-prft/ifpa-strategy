@@ -3,16 +3,14 @@
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   BarChart3,
-  Zap,
   Target,
   Users,
   Brain,
-  Sparkles,
   CheckCircle,
-  ArrowRight,
-  Activity
+  ArrowRight
 } from 'lucide-react';
 
 export default function ModernHomepage() {
@@ -43,8 +41,14 @@ export default function ModernHomepage() {
         <div className="container mx-auto px-4 py-6">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-4">
-              <Link href="/" className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg p-3 hover:from-blue-700 hover:to-indigo-700 transition-colors">
-                <Sparkles className="h-8 w-8" />
+              <Link href="/" className="rounded-lg p-2 hover:scale-105 transition-transform">
+                <Image
+                  src="/images/gradient-orb.png"
+                  alt="Optimizely Strategy Assistant"
+                  width={40}
+                  height={40}
+                  className="rounded-full"
+                />
               </Link>
               <div>
                 <h1 className="text-2xl font-bold">Optimizely Strategy Assistant</h1>
@@ -52,18 +56,6 @@ export default function ModernHomepage() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <Button asChild variant="outline" size="sm" className="gap-2">
-                <Link href="/monitoring">
-                  <Activity className="h-4 w-4" />
-                  OPAL Monitoring
-                </Link>
-              </Button>
-              <Button asChild variant="secondary" size="sm" className="gap-2">
-                <Link href="/engine">
-                  <Zap className="h-4 w-4" />
-                  Try the Engine
-                </Link>
-              </Button>
               <span className="text-sm text-muted-foreground">BETA v1.0</span>
             </div>
           </div>
@@ -101,15 +93,18 @@ export default function ModernHomepage() {
             </div>
           </div>
 
-          {/* CTA Button */}
-          <div className="mt-12">
-            <Button asChild size="lg" className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-6 text-lg gap-3 shadow-lg hover:shadow-xl transition-all">
-              <Link href="/engine">
-                Begin Your Strategy
-                <ArrowRight className="h-5 w-5" />
-              </Link>
-            </Button>
-          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="container mx-auto px-4 py-12 text-center">
+        <div className="max-w-4xl mx-auto">
+          <Button asChild size="lg" className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-6 text-lg gap-3 shadow-lg hover:shadow-xl transition-all">
+            <Link href="/engine">
+              Start Your Assistant
+              <ArrowRight className="h-5 w-5" />
+            </Link>
+          </Button>
         </div>
       </section>
 
